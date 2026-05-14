@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 
 from ordersim import InstrumentSpec, MBOEvent
-from ordersim.connectors.synthetic import SyntheticSource
+from ordersim.fixtures.synthetic import SyntheticSource
 
 
 def test_instrument_spec_converts_prices_to_ticks_and_back() -> None:

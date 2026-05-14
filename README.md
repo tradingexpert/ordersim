@@ -72,7 +72,8 @@ planned install path for the first release is:
 pip install ordersim
 ```
 
-Optional data connectors are installed separately:
+Optional data connectors will be installed separately once the connector
+protocol lands:
 
 ```bash
 pip install "ordersim[databento]"
@@ -89,7 +90,7 @@ not require a market-data subscription.
 from decimal import Decimal
 
 from ordersim import Replay
-from ordersim.connectors.synthetic import SyntheticSource
+from ordersim.fixtures.synthetic import SyntheticSource
 from ordersim.specs import InstrumentSpec
 
 
@@ -175,11 +176,13 @@ API and extension recipe docs will land with the replay package skeleton.
 
 ## Contributing
 
-The easiest first contribution is a data connector.
+The easiest first contribution will be a data connector once the connector
+protocol lands. Today, useful contributions are schema clarifications, small
+fixtures, examples, and tests.
 
 Good connector PRs:
 
-- implement the `DataSource` protocol;
+- implement the `DataSource` protocol once it lands;
 - include a tiny fixture or generator;
 - document timestamp, price, size, and order-id semantics;
 - add at least one replay test.

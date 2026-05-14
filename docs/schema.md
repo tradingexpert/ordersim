@@ -38,6 +38,10 @@ feeding events into matching or replay code.
 
 ## Synthetic Fixture
 
-`SyntheticSource.small_mbo()` returns a tiny deterministic event stream with
-all four core actions: add, trade, cancel, and modify. It is designed for
-examples, connector tests, and matching-engine smoke tests.
+`ordersim.fixtures.synthetic.SyntheticSource.small_mbo()` returns a tiny
+deterministic event stream with all four core actions: add, trade, cancel, and
+modify.
+
+The fixture ships in the package because examples and tests should run without
+private data or a paid data subscription. It is not a connector and is not meant
+to be statistically realistic.
