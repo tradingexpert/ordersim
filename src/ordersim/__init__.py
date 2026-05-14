@@ -1,5 +1,6 @@
 """Public API for ordersim."""
 
+from ordersim.connectors import DataSource, EventInput, InMemorySource, normalize_events
 from ordersim.gateway import OrderGateway
 from ordersim.recording import RecordingGateway
 from ordersim.replay import Replay, ReplayGateway, ReplayResult
@@ -20,7 +21,10 @@ from ordersim.types import (
 
 __all__ = [
     "BookSide",
+    "DataSource",
+    "EventInput",
     "Fill",
+    "InMemorySource",
     "MBOAction",
     "MBOEvent",
     "InstrumentSpec",
@@ -37,4 +41,5 @@ __all__ = [
     "RecordingGateway",
     "Side",
     "TimeInForce",
+    "normalize_events",
 ]

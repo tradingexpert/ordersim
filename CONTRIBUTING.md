@@ -9,7 +9,7 @@ audit.
 - Improve schema documentation.
 - Add a focused replay test.
 - Clarify an assumption.
-- Improve the canonical example once the package skeleton lands.
+- Improve the canonical example.
 
 ## Development Workflow
 
@@ -58,7 +58,7 @@ Please do not add:
 
 A connector should:
 
-- implement the public `DataSource` protocol once it lands;
+- implement the public `DataSource` protocol;
 - document input and normalized schemas;
 - state timestamp semantics and units;
 - include a tiny fixture or generator;

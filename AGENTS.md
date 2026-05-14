@@ -31,7 +31,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/specs.py` | Instrument specifications | Public extension surface |
 | `ordersim/types.py` | Public dataclasses and type aliases | Yes |
 | `ordersim/fixtures/` | Tiny public fixtures for examples and tests | Public |
-| `ordersim/connectors/` | Data sources | Planned public extension surface |
+| `ordersim/connectors/` | Data source contracts | Yes |
 | `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Yes |
 | `ordersim/replay/factory.py` | Builds feed, venue, OMS, portfolio | Planned internal |
 | `ordersim/sim/matching_engine.py` | MBO matching and queue tracking reference | Yes |
@@ -70,7 +70,7 @@ gateway or whether the strategy should own that state itself.
 
 ### Add a Data Connector
 
-1. Wait for, or add, the public `DataSource` protocol.
+1. Implement the public `DataSource` protocol.
 2. Convert source data into the canonical MBO event schema.
 3. Add a tiny fixture or generator that does not require private data.
 4. Add a replay test that proves at least one limit order can rest, fill, and

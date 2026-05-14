@@ -72,8 +72,7 @@ planned install path for the first release is:
 pip install ordersim
 ```
 
-Optional data connectors will be installed separately once the connector
-protocol lands:
+Optional vendor connectors will be installed separately as extras:
 
 ```bash
 pip install "ordersim[databento]"
@@ -172,21 +171,18 @@ Planned release sequence:
 ## Documentation
 
 - Assumptions: `docs/assumptions.md`
+- Connectors: `docs/connectors.md`
 - Engineering standards: `docs/engineering-standards.md`
 - Schema reference: `docs/schema.md`
 - AI agent guide: `AGENTS.md`
 
-Connector extension recipe docs will land with the connector protocol.
-
 ## Contributing
 
-The easiest first contribution will be a data connector once the connector
-protocol lands. Today, useful contributions are schema clarifications, small
-fixtures, examples, and tests.
+The easiest first contribution is a data connector.
 
 Good connector PRs:
 
-- implement the `DataSource` protocol once it lands;
+- implement the `DataSource` protocol;
 - include a tiny fixture or generator;
 - document timestamp, price, size, and order-id semantics;
 - add at least one replay test.
