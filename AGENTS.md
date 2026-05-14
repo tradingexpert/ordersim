@@ -35,6 +35,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/connectors/csv.py` | Normalized CSV `MBOEvent` source | Yes |
 | `ordersim/latency.py` | Latency model contracts and reference models | Yes |
 | `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Yes |
+| `ordersim/testing/` | Public helpers for extension tests | Public |
 | `ordersim/replay/factory.py` | Builds feed, venue, OMS, portfolio | Planned internal |
 | `ordersim/sim/execution.py` | Execution engine protocol | Yes |
 | `ordersim/sim/matching_engine.py` | MBO matching and queue tracking reference | Yes |
@@ -120,6 +121,9 @@ Python engine before release:
 Engines consume normalized `MBOEvent` rows. Do not make an engine responsible
 for reading Databento, CSV, Parquet, or any other source format; that belongs in
 a connector.
+
+Use `ordersim.testing.assert_equivalent_execution_engines` before trusting a new
+engine implementation.
 
 ## Things Not To Do
 

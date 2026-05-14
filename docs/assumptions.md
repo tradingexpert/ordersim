@@ -130,9 +130,9 @@ The pure Python engine is the reference implementation because it is readable
 and debuggable.
 
 Compiled execution engines may be added for scale, but they are not allowed to
-change semantics. An engine is acceptable only when public equivalence fixtures
-show the same fills and final state as the Python engine for the same replay and
-strategy actions.
+change semantics. An engine is acceptable only when the public equivalence
+harness shows the same fills, final state, and order-intent log as the Python
+engine for the same replay and strategy actions.
 
 Engines consume normalized `MBOEvent` rows. Vendor data ingestion belongs to
 connectors, not to the execution engine.

@@ -43,3 +43,29 @@ replay = Replay(
 
 `Replay.run_many(...)` creates a fresh engine for each strategy run, so each
 strategy has isolated order state while sharing the same immutable event stream.
+
+## Equivalence Harness
+
+Compiled or alternative execution engines must prove replay equivalence against
+the Python `MatchingEngine` before release. Use the public test helper:
+
+```python
+from ordersim.testing import assert_equivalent_execution_engines
+
+assert_equivalent_execution_engines(
+    data=source,
+    instrument=spec,
+    strategy=strategy,
+    candidate_factory=my_execution_engine_factory,
+)
+```
+
+The harness runs the same immutable event stream and strategy through the
+reference engine and the candidate engine. It compares:
+
+- fills;
+- final position;
+- order-intent log.
+
+This is the required path for future C++ engines. Performance can improve, but
+observable replay behavior must not change.
