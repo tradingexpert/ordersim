@@ -47,11 +47,29 @@ accounting without reconstructing intent from surrounding events.
 | `symbol` | `str` | Human-readable instrument symbol. |
 | `tick_size` | `Decimal` | Minimum price increment. |
 | `point_value` | `Decimal` | Currency value of one point. |
-| `commission_per_contract` | `Decimal` | Round-turn convention is caller-defined. |
+| `commission_per_contract` | `Decimal` | Commission charged per filled contract in the realized ledger. |
 
 The spec includes helpers to convert exact prices to integer ticks and back.
 Connectors should validate prices against the target instrument spec before
 feeding events into matching or replay code.
+
+## `ExecutionSummary`
+
+`ExecutionSummary` is the realized fill ledger returned by
+`ReplayResult.execution_summary`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `contract_volume` | `int` | Total filled contracts/lots. |
+| `gross_notional` | `Decimal` | Sum of absolute fill notional. |
+| `signed_notional` | `Decimal` | Sells positive, buys negative. |
+| `commission` | `Decimal` | Total fill commission. |
+| `realized_pnl` | `Decimal` | FIFO realized PnL before commission. |
+| `net_realized_pnl` | `Decimal` | `realized_pnl - commission`. |
+| `final_position` | `int` | Signed open position after all fills. |
+| `open_lots` | `tuple[PositionLot, ...]` | Remaining FIFO lots. |
+
+See `docs/economics.md` for the assumptions and explicit non-goals.
 
 ## Synthetic Fixture
 

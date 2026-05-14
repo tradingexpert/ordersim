@@ -136,11 +136,12 @@ result = replay.run(strategy)
 
 print(result.fills)
 print(result.order_events)
+print(result.execution_summary)
 ```
 
-The important output is not just final PnL. The important output is the event
-log showing what the strategy tried to do and what the simulated venue did in
-response.
+The important output is not just final realized PnL. The important output is
+the fill ledger and event log showing what the strategy tried to do and what
+the simulated venue did in response.
 
 Strategies advance replay time explicitly with `gateway.advance_to(...)`; the
 library supplies execution semantics, not a strategy framework.
@@ -191,6 +192,7 @@ Planned release sequence:
 ## Documentation
 
 - Assumptions: `docs/assumptions.md`
+- Execution economics: `docs/economics.md`
 - Execution engines: `docs/execution-engines.md`
 - Latency models: `docs/latency.md`
 - Connectors: `docs/connectors.md`
