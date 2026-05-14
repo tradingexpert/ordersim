@@ -35,6 +35,29 @@ you want many plausible paths drawn from the measurements you supplied.
 Both empirical models can filter by `regime` when measurements include regime
 labels.
 
+## Replay Behavior
+
+`Replay` accepts a `latency_model_factory`. A fresh model is created for each
+strategy run, so seeded or stateful models do not leak state across `run_many`.
+
+```python
+from ordersim import ConstantLatency, Replay
+
+replay = Replay(
+    data=source,
+    instrument=spec,
+    latency_model_factory=lambda: ConstantLatency(entry_ns=25_000_000),
+)
+```
+
+The current replay gateway applies the entry-latency leg to side-effecting
+order calls: limit orders, market orders, and cancels. If market-data events
+arrive before the simulated venue receives the order or cancel, those events
+are applied first.
+
+The response-latency leg is part of the public model contract, but replay does
+not yet delay local strategy observation of fills.
+
 ## Planned Models
 
 The longer-term latency library should add:

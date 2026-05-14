@@ -137,6 +137,19 @@ response.
 Strategies advance replay time explicitly with `gateway.advance_to(...)`; the
 library supplies execution semantics, not a strategy framework.
 
+Replay can also apply entry latency before orders and cancels reach the
+simulated venue:
+
+```python
+from ordersim import ConstantLatency
+
+replay = Replay(
+    data=SyntheticSource.small_mbo(),
+    instrument=spec,
+    latency_model_factory=lambda: ConstantLatency(entry_ns=25_000_000),
+)
+```
+
 ## Multi-Strategy Replay
 
 `ordersim` can run several strategy variants over the same market replay while

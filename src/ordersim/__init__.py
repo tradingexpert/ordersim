@@ -14,7 +14,9 @@ from ordersim.latency import (
     JitteredLatency,
     LatencyMeasurement,
     LatencyModel,
+    LatencyModelFactory,
     LatencySample,
+    default_latency_model_factory,
 )
 from ordersim.recording import RecordingGateway
 from ordersim.replay import Replay, ReplayGateway, ReplayResult
@@ -52,6 +54,7 @@ __all__ = [
     "JitteredLatency",
     "LatencyMeasurement",
     "LatencyModel",
+    "LatencyModelFactory",
     "LatencySample",
     "MBOAction",
     "MBOEvent",
@@ -69,5 +72,6 @@ __all__ = [
     "RecordingGateway",
     "Side",
     "TimeInForce",
+    "default_latency_model_factory",
     "normalize_events",
 ]
