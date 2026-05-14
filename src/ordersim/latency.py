@@ -9,6 +9,7 @@ The models in this module do not predict venue behavior. They make simple,
 testable latency assumptions available to replay and venue code.
 """
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from random import Random
 from typing import Protocol
@@ -109,6 +110,139 @@ class JitteredLatency:
         if self.jitter_ns == 0:
             return base_ns
         return max(0, base_ns + self._rng.randint(-self.jitter_ns, self.jitter_ns))
+
+
+class EmpiricalPlayback:
+    """Replay observed latency samples in timestamp order.
+
+    Playback is finite by design. It is intended for debugging and regression
+    tests against one recorded latency series, not for extrapolating beyond the
+    measurements supplied by the user.
+    """
+
+    __slots__ = ("_cursors", "_samples", "_samples_by_regime")
+
+    _cursors: dict[str | None, int]
+    _samples: tuple[LatencySample, ...]
+    _samples_by_regime: dict[str | None, tuple[LatencySample, ...]]
+
+    def __init__(self, measurements: Iterable[LatencyMeasurement]) -> None:
+        ordered = tuple(sorted(measurements, key=lambda measurement: measurement.ts_ns))
+        if not ordered:
+            raise ValueError("measurements must not be empty")
+
+        self._samples = tuple(_sample_from_measurement(row) for row in ordered)
+        self._samples_by_regime = _samples_by_regime(ordered)
+        self._cursors = {}
+
+    @classmethod
+    def from_measurements(
+        cls,
+        measurements: Iterable[LatencyMeasurement],
+    ) -> "EmpiricalPlayback":
+        """Build playback from observed latency measurements."""
+
+        return cls(measurements)
+
+    def sample(self, ts_ns: int, regime: str | None = None) -> LatencySample:
+        """Return the next recorded sample for ``regime``."""
+
+        _require_non_negative_int("ts_ns", ts_ns)
+        samples = self._select_samples(regime)
+        cursor = self._cursors.get(regime, 0)
+        if cursor >= len(samples):
+            raise IndexError("empirical playback is exhausted")
+        self._cursors[regime] = cursor + 1
+        return samples[cursor]
+
+    def reset(self) -> None:
+        """Reset playback cursors to the start of each series."""
+
+        self._cursors.clear()
+
+    def _select_samples(self, regime: str | None) -> tuple[LatencySample, ...]:
+        if regime is None:
+            return self._samples
+        samples = self._samples_by_regime.get(regime, ())
+        if not samples:
+            raise ValueError(f"no latency measurements for regime: {regime!r}")
+        return samples
+
+
+class EmpiricalBootstrap:
+    """Sample observed latency rows with replacement.
+
+    Bootstrap is intended for robustness studies where the user wants many
+    plausible latency paths consistent with observed measurements.
+    """
+
+    __slots__ = ("_rng", "_samples", "_samples_by_regime")
+
+    _rng: Random
+    _samples: tuple[LatencySample, ...]
+    _samples_by_regime: dict[str | None, tuple[LatencySample, ...]]
+
+    def __init__(
+        self,
+        measurements: Iterable[LatencyMeasurement],
+        *,
+        seed: int | None = None,
+    ) -> None:
+        ordered = tuple(sorted(measurements, key=lambda measurement: measurement.ts_ns))
+        if not ordered:
+            raise ValueError("measurements must not be empty")
+
+        self._samples = tuple(_sample_from_measurement(row) for row in ordered)
+        self._samples_by_regime = _samples_by_regime(ordered)
+        self._rng = Random(seed)
+
+    @classmethod
+    def from_measurements(
+        cls,
+        measurements: Iterable[LatencyMeasurement],
+        *,
+        seed: int | None = None,
+    ) -> "EmpiricalBootstrap":
+        """Build seeded bootstrap from observed latency measurements."""
+
+        return cls(measurements, seed=seed)
+
+    def sample(self, ts_ns: int, regime: str | None = None) -> LatencySample:
+        """Return one sampled observed latency row."""
+
+        _require_non_negative_int("ts_ns", ts_ns)
+        samples = self._select_samples(regime)
+        return self._rng.choice(samples)
+
+    def _select_samples(self, regime: str | None) -> tuple[LatencySample, ...]:
+        if regime is None:
+            return self._samples
+        samples = self._samples_by_regime.get(regime, ())
+        if not samples:
+            raise ValueError(f"no latency measurements for regime: {regime!r}")
+        return samples
+
+
+def _sample_from_measurement(measurement: LatencyMeasurement) -> LatencySample:
+    return LatencySample(
+        entry_ns=measurement.entry_ns,
+        response_ns=measurement.response_ns,
+    )
+
+
+def _samples_by_regime(
+    measurements: tuple[LatencyMeasurement, ...],
+) -> dict[str | None, tuple[LatencySample, ...]]:
+    regimes = {measurement.regime for measurement in measurements}
+    return {
+        regime: tuple(
+            _sample_from_measurement(measurement)
+            for measurement in measurements
+            if measurement.regime == regime
+        )
+        for regime in regimes
+        if regime is not None
+    }
 
 
 def _require_non_negative_int(name: str, value: int) -> None:

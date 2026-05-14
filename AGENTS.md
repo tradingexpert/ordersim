@@ -93,8 +93,9 @@ as `ordersim[databento]`.
 
 1. Implement the `LatencyModel` protocol.
 2. Make randomness seedable.
-3. Document the model's assumptions and failure modes.
-4. Add a deterministic test with a fixed seed.
+3. Keep entry and response latency separate.
+4. Document the model's assumptions and failure modes.
+5. Add a deterministic test with a fixed seed.
 
 Latency models should make assumptions visible. They should not imply that a
 recorded latency path is the only realistic future path.
