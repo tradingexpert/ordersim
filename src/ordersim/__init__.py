@@ -7,6 +7,13 @@ from ordersim.connectors import (
     normalize_events,
 )
 from ordersim.gateway import OrderGateway
+from ordersim.latency import (
+    ConstantLatency,
+    JitteredLatency,
+    LatencyMeasurement,
+    LatencyModel,
+    LatencySample,
+)
 from ordersim.recording import RecordingGateway
 from ordersim.replay import Replay, ReplayGateway, ReplayResult
 from ordersim.sim import (
@@ -31,12 +38,17 @@ from ordersim.types import (
 
 __all__ = [
     "BookSide",
+    "ConstantLatency",
     "DataSource",
     "EventInput",
     "ExecutionEngine",
     "ExecutionEngineFactory",
     "Fill",
     "InMemorySource",
+    "JitteredLatency",
+    "LatencyMeasurement",
+    "LatencyModel",
+    "LatencySample",
     "MBOAction",
     "MBOEvent",
     "InstrumentSpec",

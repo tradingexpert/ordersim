@@ -171,6 +171,7 @@ Planned release sequence:
 
 - Assumptions: `docs/assumptions.md`
 - Execution engines: `docs/execution-engines.md`
+- Latency models: `docs/latency.md`
 - Connectors: `docs/connectors.md`
 - Engineering standards: `docs/engineering-standards.md`
 - Example: `examples/canonical.py`

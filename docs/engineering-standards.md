@@ -97,6 +97,9 @@ Every latency or fill model needs:
 - failure modes;
 - when not to use it.
 
+Latency models must keep entry and response latency explicit. They should not
+collapse the two legs into one opaque number at the public API boundary.
+
 ## Extraction Checklist
 
 Before moving a file from the private repo:
