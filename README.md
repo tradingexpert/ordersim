@@ -86,6 +86,8 @@ This example uses synthetic fixture data shipped with the package, so it does
 not require a market-data subscription.
 
 ```python
+from decimal import Decimal
+
 from ordersim import Replay
 from ordersim.connectors.synthetic import SyntheticSource
 from ordersim.specs import InstrumentSpec
@@ -94,7 +96,7 @@ from ordersim.specs import InstrumentSpec
 def strategy(gateway):
     bid, ask = gateway.book_top()
 
-    order_id = gateway.place_limit(
+    result = gateway.place_limit(
         side="buy",
         price=bid,
         size=1,
@@ -103,15 +105,16 @@ def strategy(gateway):
     gateway.advance_to(gateway.now_ns() + 1_000_000_000)
 
     if gateway.position() == 0:
-        gateway.cancel(order_id)
+        if result.order_id is not None:
+            gateway.cancel(result.order_id)
         gateway.place_market(side="buy", size=1)
 
 
 spec = InstrumentSpec(
     symbol="GC",
-    tick_size="0.10",
-    point_value="100",
-    commission_per_contract="2.50",
+    tick_size=Decimal("0.10"),
+    point_value=Decimal("100"),
+    commission_per_contract=Decimal("2.50"),
 )
 
 events = []
