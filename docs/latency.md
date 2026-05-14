@@ -16,6 +16,24 @@ class LatencyModel(Protocol):
     def sample(self, ts_ns: int, regime: str | None = None) -> LatencySample: ...
 ```
 
+## Which Model Should I Use?
+
+Use `EmpiricalBootstrap` when you have latency measurements and want the most
+useful research default. It samples many plausible latency paths from the
+measurements you supplied, stays reproducible with a seed, and avoids treating
+one recorded afternoon as the only future path.
+
+Use `ConstantLatency` for smoke tests, examples, and baseline comparisons. It
+is easy to explain and should usually be the first model in a minimal example.
+
+Use `EmpiricalPlayback` when you need exact regression against one recorded
+latency series. It is intentionally not the recommended robustness model,
+because exact playback repeats one historical realization.
+
+Use `JitteredLatency` for quick sensitivity checks when you do not yet have
+real measurements. Replace it with empirical measurements before making
+research claims.
+
 ## Reference Models
 
 `ConstantLatency` returns the same two-leg sample every time. It is useful for
