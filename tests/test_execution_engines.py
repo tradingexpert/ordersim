@@ -1,7 +1,13 @@
 from decimal import Decimal
 
-from ordersim import InstrumentSpec, MBOEvent, Replay
+import pytest
+
+from ordersim import InstrumentSpec, MatchingEngine, MBOEvent, Replay
 from ordersim.sim import ExecutionEngine, default_execution_engine_factory
+from ordersim.testing import (
+    assert_equivalent_execution_engines,
+    compare_execution_engines,
+)
 from ordersim.types import Fill, OrderResult
 
 
@@ -46,6 +52,38 @@ class ScriptedEngine:
 
     def position(self) -> int:
         return self.signed_position
+
+
+class NoFillEngine:
+    def apply_event(self, event: MBOEvent) -> list[Fill]:
+        return []
+
+    def advance_time(self, ts_ns: int) -> None:
+        pass
+
+    def place_limit(
+        self,
+        side: str,
+        price: Decimal,
+        size: int,
+        tif: str = "GTC",
+    ) -> OrderResult:
+        return OrderResult(order_id=None)
+
+    def place_market(self, side: str, size: int) -> list[Fill]:
+        return []
+
+    def cancel(self, order_id: int) -> bool:
+        return False
+
+    def book_top(self) -> tuple[Decimal | None, Decimal | None]:
+        return None, None
+
+    def book_depth(self, levels: int) -> tuple[tuple[object, ...], tuple[object, ...]]:
+        return (), ()
+
+    def position(self) -> int:
+        return 0
 
 
 def gc_spec() -> InstrumentSpec:
@@ -129,3 +167,53 @@ def test_run_many_uses_fresh_engine_per_strategy() -> None:
         list(tiny_events()),
         list(tiny_events()),
     ]
+
+
+def test_compare_execution_engines_reports_equivalent_results() -> None:
+    def strategy(gateway) -> None:
+        gateway.advance_to(1)
+        gateway.place_market(side="buy", size=1)
+
+    result = compare_execution_engines(
+        data=tiny_events(),
+        instrument=gc_spec(),
+        strategy=strategy,
+        candidate_factory=MatchingEngine,
+    )
+
+    assert result.equivalent is True
+    assert result.reference == result.candidate
+
+
+def test_assert_equivalent_execution_engines_returns_result() -> None:
+    def strategy(gateway) -> None:
+        gateway.advance_to(1)
+        gateway.place_market(side="buy", size=1)
+
+    result = assert_equivalent_execution_engines(
+        data=tiny_events(),
+        instrument=gc_spec(),
+        strategy=strategy,
+        candidate_factory=MatchingEngine,
+    )
+
+    assert result.equivalent is True
+
+
+def test_assert_equivalent_execution_engines_reports_differences() -> None:
+    def strategy(gateway) -> None:
+        gateway.advance_to(1)
+        gateway.place_market(side="buy", size=1)
+
+    with pytest.raises(AssertionError) as exc_info:
+        assert_equivalent_execution_engines(
+            data=tiny_events(),
+            instrument=gc_spec(),
+            strategy=strategy,
+            candidate_factory=NoFillEngine,
+        )
+
+    message = str(exc_info.value)
+    assert "fills differ" in message
+    assert "final positions differ" in message
+    assert "order events differ" in message
