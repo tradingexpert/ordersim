@@ -24,13 +24,22 @@ smoke tests, baseline comparisons, and examples.
 `JitteredLatency` samples uniformly from `base +/- jitter_ns` for each leg and
 clamps at zero. Supplying a seed makes the sample sequence reproducible.
 
+`EmpiricalPlayback` replays observed measurements in timestamp order. It is
+finite and raises when the recorded series is exhausted. Use it for debugging
+and exact regression against one recorded latency path.
+
+`EmpiricalBootstrap` samples observed measurements with replacement. Supplying
+a seed makes the sampled path reproducible. Use it for robustness studies when
+you want many plausible paths drawn from the measurements you supplied.
+
+Both empirical models can filter by `regime` when measurements include regime
+labels.
+
 ## Planned Models
 
 The longer-term latency library should add:
 
-- empirical playback for exact regression against one recorded series;
-- empirical bootstrap for distributional robustness studies;
 - parametric models for tail and sensitivity analysis;
-- regime conditioning for time-of-day or user-defined states.
+- richer regime conditioning for time-of-day or user-defined states.
 
 These are planned models, not current behavior.

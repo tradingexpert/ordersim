@@ -9,6 +9,8 @@ from ordersim.connectors import (
 from ordersim.gateway import OrderGateway
 from ordersim.latency import (
     ConstantLatency,
+    EmpiricalBootstrap,
+    EmpiricalPlayback,
     JitteredLatency,
     LatencyMeasurement,
     LatencyModel,
@@ -40,6 +42,8 @@ __all__ = [
     "BookSide",
     "ConstantLatency",
     "DataSource",
+    "EmpiricalBootstrap",
+    "EmpiricalPlayback",
     "EventInput",
     "ExecutionEngine",
     "ExecutionEngineFactory",
