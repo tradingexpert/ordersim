@@ -38,7 +38,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/sim/feed.py` | Event replay cursor | Planned internal |
 | `ordersim/sim/venue.py` | Latency-aware venue simulation | Planned internal |
 | `ordersim/oms/strategy_oms.py` | Order lifecycle management | Planned internal |
-| `examples/` | Complete user-facing examples | Planned public |
+| `examples/` | Complete user-facing examples | Public |
 | `docs/` | Assumptions, schemas, recipes | Public |
 
 ## Public Gateway Contract
