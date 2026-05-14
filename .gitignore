@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+.venv/
+venv/
+
+# Local data and generated artifacts
+*.parquet
+*.csv
+*.feather
+*.h5
+*.hdf5
+*.db
+*.sqlite
+*.png
+*.pdf
+model_cache*/
+runs/
+artifacts/
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+
