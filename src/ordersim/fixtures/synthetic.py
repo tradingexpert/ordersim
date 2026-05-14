@@ -64,3 +64,56 @@ class SyntheticSource:
                 order_id=2,
             ),
         )
+
+    @staticmethod
+    def execution_equivalence_mbo() -> tuple[MBOEvent, ...]:
+        """Return a queue-aware fixture for execution-engine equivalence tests.
+
+        The stream creates both sides of the book, modifies the ask, partially
+        cancels queue ahead on the bid, then trades through the remaining bid
+        queue. A strategy that rests a bid after timestamp 2 can be passively
+        filled at timestamp 5 after public queue ahead is consumed.
+        """
+
+        return (
+            MBOEvent(
+                ts_ns=1,
+                action="add",
+                side="ask",
+                price=Decimal("101.0"),
+                size=3,
+                order_id=10,
+            ),
+            MBOEvent(
+                ts_ns=2,
+                action="add",
+                side="bid",
+                price=Decimal("100.0"),
+                size=5,
+                order_id=20,
+            ),
+            MBOEvent(
+                ts_ns=3,
+                action="modify",
+                side="ask",
+                price=Decimal("101.0"),
+                size=2,
+                order_id=10,
+            ),
+            MBOEvent(
+                ts_ns=4,
+                action="cancel",
+                side="bid",
+                price=Decimal("100.0"),
+                size=2,
+                order_id=20,
+            ),
+            MBOEvent(
+                ts_ns=5,
+                action="trade",
+                side="bid",
+                price=Decimal("100.0"),
+                size=4,
+                order_id=20,
+            ),
+        )

@@ -199,6 +199,10 @@ Planned release sequence:
 - Schema reference: `docs/schema.md`
 - AI agent guide: `AGENTS.md`
 
+For execution-engine work, `SyntheticSource.execution_equivalence_mbo()` gives
+contributors a tiny public queue-priority fixture to use with the equivalence
+harness.
+
 ## Contributing
 
 The easiest first contribution is a data connector.

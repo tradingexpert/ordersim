@@ -101,6 +101,22 @@ def test_synthetic_source_small_mbo_is_readable_and_deterministic() -> None:
     assert all(event.price.as_tuple().exponent <= 0 for event in events)
 
 
+def test_synthetic_source_execution_equivalence_mbo_documents_queue_case() -> None:
+    events = SyntheticSource.execution_equivalence_mbo()
+
+    assert events == SyntheticSource.execution_equivalence_mbo()
+    assert [event.action for event in events] == [
+        "add",
+        "add",
+        "modify",
+        "cancel",
+        "trade",
+    ]
+    assert [event.ts_ns for event in events] == [1, 2, 3, 4, 5]
+    assert events[-1].side == "bid"
+    assert events[-1].size == 4
+
+
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [

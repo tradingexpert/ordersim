@@ -125,6 +125,9 @@ a connector.
 Use `ordersim.testing.assert_equivalent_execution_engines` before trusting a new
 engine implementation.
 
+Use `SyntheticSource.execution_equivalence_mbo()` as the first public fixture
+for engine equivalence tests.
+
 ## Things Not To Do
 
 - Do not add a strategy framework.

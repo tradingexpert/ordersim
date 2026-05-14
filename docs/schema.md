@@ -42,6 +42,11 @@ feeding events into matching or replay code.
 deterministic event stream with all four core actions: add, trade, cancel, and
 modify.
 
+`SyntheticSource.execution_equivalence_mbo()` returns a queue-aware fixture for
+execution-engine equivalence tests. It creates both sides of the book, modifies
+the ask, partially cancels queue ahead on the bid, then trades through the bid
+queue so a resting strategy order can be passively filled.
+
 The fixture ships in the package because examples and tests should run without
 private data or a paid data subscription. It is not a connector and is not meant
 to be statistically realistic.
