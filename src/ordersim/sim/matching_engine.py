@@ -302,6 +302,7 @@ class MatchingEngine:
             fills.append(
                 Fill(
                     order_id=order_id,
+                    side=side,
                     price=price,
                     size=trade_size,
                     ts_ns=self._now_ns,
@@ -381,7 +382,13 @@ class MatchingEngine:
         consumed = min(order.size, available_size)
         order.size -= consumed
         self._remove_from_book(side, price, consumed)
-        fill = Fill(order_id=order_id, price=price, size=consumed, ts_ns=ts_ns)
+        fill = Fill(
+            order_id=order_id,
+            side=_order_side_for_book_side(side),
+            price=price,
+            size=consumed,
+            ts_ns=ts_ns,
+        )
         self._passive_fills.append(fill)
         self._position += consumed if side == "bid" else -consumed
 
@@ -470,3 +477,7 @@ def _book_side_for_order_side(side: Side) -> BookSide:
 
 def _opposite_book_side(side: Side) -> BookSide:
     return "ask" if side == "buy" else "bid"
+
+
+def _order_side_for_book_side(side: BookSide) -> Side:
+    return "buy" if side == "bid" else "sell"

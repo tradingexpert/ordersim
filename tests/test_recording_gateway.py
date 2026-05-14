@@ -12,7 +12,15 @@ class FakeGateway:
 
     def advance_to(self, ts_ns: int) -> list[Fill]:
         self.now = ts_ns
-        return [Fill(order_id=7, price=Decimal("101.0"), size=2, ts_ns=ts_ns)]
+        return [
+            Fill(
+                order_id=7,
+                side="sell",
+                price=Decimal("101.0"),
+                size=2,
+                ts_ns=ts_ns,
+            )
+        ]
 
     def place_limit(
         self,
@@ -23,11 +31,27 @@ class FakeGateway:
     ) -> OrderResult:
         return OrderResult(
             order_id=42,
-            fills=(Fill(order_id=41, price=price, size=1, ts_ns=self.now),),
+            fills=(
+                Fill(
+                    order_id=41,
+                    side=side,
+                    price=price,
+                    size=1,
+                    ts_ns=self.now,
+                ),
+            ),
         )
 
     def place_market(self, side: Side, size: int) -> list[Fill]:
-        return [Fill(order_id=99, price=Decimal("102.5"), size=size, ts_ns=self.now)]
+        return [
+            Fill(
+                order_id=99,
+                side=side,
+                price=Decimal("102.5"),
+                size=size,
+                ts_ns=self.now,
+            )
+        ]
 
     def cancel(self, order_id: OrderId) -> bool:
         self.cancelled.append(order_id)
@@ -73,6 +97,7 @@ def test_recording_gateway_records_limit_attempt_and_fill() -> None:
             kind="fill",
             ts_ns=1_000,
             order_id=41,
+            side="buy",
             fill_price=Decimal("100.5"),
             fill_size=1,
             source="place_limit",
@@ -89,7 +114,15 @@ def test_recording_gateway_records_passive_fill_and_cancel() -> None:
     accepted = gateway.cancel(42)
 
     assert accepted is True
-    assert fills == [Fill(order_id=7, price=Decimal("101.0"), size=2, ts_ns=2_000)]
+    assert fills == [
+        Fill(
+            order_id=7,
+            side="sell",
+            price=Decimal("101.0"),
+            size=2,
+            ts_ns=2_000,
+        )
+    ]
     assert inner.cancelled == [42]
     assert events == [
         OrderEvent(
@@ -97,6 +130,7 @@ def test_recording_gateway_records_passive_fill_and_cancel() -> None:
             kind="fill_passive",
             ts_ns=2_000,
             order_id=7,
+            side="sell",
             fill_price=Decimal("101.0"),
             fill_size=2,
         ),
@@ -116,7 +150,15 @@ def test_recording_gateway_records_market_attempt_and_fill() -> None:
 
     fills = gateway.place_market(side="sell", size=2)
 
-    assert fills == [Fill(order_id=99, price=Decimal("102.5"), size=2, ts_ns=1_000)]
+    assert fills == [
+        Fill(
+            order_id=99,
+            side="sell",
+            price=Decimal("102.5"),
+            size=2,
+            ts_ns=1_000,
+        )
+    ]
     assert events == [
         OrderEvent(
             strategy="alpha",
@@ -131,6 +173,7 @@ def test_recording_gateway_records_market_attempt_and_fill() -> None:
             kind="fill",
             ts_ns=1_000,
             order_id=99,
+            side="sell",
             fill_price=Decimal("102.5"),
             fill_size=2,
             source="place_market",

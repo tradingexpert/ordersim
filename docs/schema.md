@@ -21,6 +21,23 @@ For trades, `side` is the resting book side that traded, not the aggressor
 side. For example, a market buy that trades against an ask resting order is
 represented with `side="ask"`.
 
+## `Fill`
+
+`Fill` represents one execution observed by a strategy.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `order_id` | `int` | Simulated strategy order id. |
+| `side` | `"buy" \| "sell"` | Strategy side of the execution. |
+| `price` | `Decimal` | Exact fill price. |
+| `size` | `int` | Filled quantity in contracts/lots. |
+| `ts_ns` | `int` | Simulated venue timestamp in integer nanoseconds. |
+
+For passive fills, `side` still means the strategy side. A resting own bid that
+is later filled by public trade volume is therefore reported as `side="buy"`.
+This keeps fills directly usable for audit trails and future cash/PnL
+accounting without reconstructing intent from surrounding events.
+
 ## `InstrumentSpec`
 
 `InstrumentSpec` holds execution-relevant instrument economics.
