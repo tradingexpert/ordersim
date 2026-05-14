@@ -36,6 +36,17 @@ Public trades and public cancels then consume queue ahead according to the
 matching model. When queue ahead reaches zero, subsequent eligible volume can
 fill the strategy order.
 
+The reference Python matching engine keeps an explicit FIFO for each
+`(side, price)` level. Public MBO add events and strategy orders append to that
+FIFO. Public cancels remove or reduce the referenced public order. Public trades
+consume from the front of the FIFO, so own resting orders are passively filled
+only after visible queue ahead has been consumed.
+
+Public modifies at the same price keep their current queue position. Public
+modifies that change price or side remove the old queue entry and append the
+order to the back of the new level. Exchange-specific priority rules can be
+added later as named fill models.
+
 This model does not claim to know hidden liquidity, exchange-specific priority
 exceptions, implied orders, pro-rata allocation, self-match prevention rules, or
 venue-specific edge cases unless a specific fill model documents them.
