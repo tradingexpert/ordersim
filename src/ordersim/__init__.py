@@ -8,8 +8,11 @@ from ordersim.connectors import (
     normalize_events,
 )
 from ordersim.economics import (
+    EquityPoint,
     ExecutionSummary,
     PositionLot,
+    ValuationMark,
+    build_equity_curve,
     summarize_fills,
 )
 from ordersim.gateway import OrderGateway
@@ -54,6 +57,7 @@ __all__ = [
     "EmpiricalBootstrap",
     "EmpiricalPlayback",
     "EventInput",
+    "EquityPoint",
     "ExecutionEngine",
     "ExecutionEngineFactory",
     "ExecutionSummary",
@@ -81,6 +85,8 @@ __all__ = [
     "RecordingGateway",
     "Side",
     "TimeInForce",
+    "ValuationMark",
+    "build_equity_curve",
     "default_latency_model_factory",
     "normalize_events",
     "summarize_fills",

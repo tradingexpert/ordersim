@@ -72,10 +72,17 @@ Replay results include a realized fill ledger computed from `InstrumentSpec`.
 The ledger uses FIFO lots, contract `point_value`, and
 `commission_per_contract`.
 
-This is not full portfolio accounting. It does not mark open positions to
-market, model margin, model funding, or reproduce broker statement rules. Its
-purpose is narrower: make realized execution economics deterministic and
-auditable from the fills.
+The realized ledger is not full portfolio accounting. It does not model margin,
+funding, or broker statement rules. Its purpose is narrower: make realized
+execution economics deterministic and auditable from the fills.
+
+Replay also exposes a mark-to-market equity curve when valuation marks are
+available. The default replay valuation mark is midpoint after a book event or
+order action when both bid and ask exist. Drawdown is computed from this marked
+equity curve as a positive drop from the prior high-water mark.
+
+Midpoint valuation is a default, not a universal truth. Bid, ask, last-trade,
+settlement, and user-supplied marks can be added as explicit valuation models.
 
 ## Latency Assumptions
 

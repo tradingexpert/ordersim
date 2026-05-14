@@ -1,9 +1,12 @@
 from decimal import Decimal
 
 from ordersim import (
+    EquityPoint,
     Fill,
     InstrumentSpec,
     PositionLot,
+    ValuationMark,
+    build_equity_curve,
     summarize_fills,
 )
 
@@ -65,3 +68,55 @@ def test_summarize_fills_closes_short_lots_with_fifo_pnl() -> None:
     assert summary.open_lots == (
         PositionLot(side="sell", price=Decimal("101.0"), size=1),
     )
+
+
+def test_build_equity_curve_marks_open_lots_and_drawdown() -> None:
+    fills = (
+        Fill(order_id=1, side="buy", price=Decimal("100.0"), size=1, ts_ns=1),
+        Fill(order_id=2, side="sell", price=Decimal("100.0"), size=1, ts_ns=4),
+    )
+    marks = (
+        ValuationMark(ts_ns=2, price=Decimal("101.0")),
+        ValuationMark(ts_ns=3, price=Decimal("99.0")),
+        ValuationMark(ts_ns=4, price=Decimal("100.0")),
+    )
+
+    curve = build_equity_curve(fills, marks, gc_spec())
+
+    assert curve == (
+        EquityPoint(
+            ts_ns=2,
+            mark_price=Decimal("101.0"),
+            realized_pnl=Decimal("0"),
+            unrealized_pnl=Decimal("100.0"),
+            commission=Decimal("2.50"),
+            equity=Decimal("97.50"),
+            drawdown=Decimal("0.00"),
+        ),
+        EquityPoint(
+            ts_ns=3,
+            mark_price=Decimal("99.0"),
+            realized_pnl=Decimal("0"),
+            unrealized_pnl=Decimal("-100.0"),
+            commission=Decimal("2.50"),
+            equity=Decimal("-102.50"),
+            drawdown=Decimal("200.00"),
+        ),
+        EquityPoint(
+            ts_ns=4,
+            mark_price=Decimal("100.0"),
+            realized_pnl=Decimal("0.0"),
+            unrealized_pnl=Decimal("0"),
+            commission=Decimal("5.00"),
+            equity=Decimal("-5.00"),
+            drawdown=Decimal("102.50"),
+        ),
+    )
+
+
+def test_build_equity_curve_returns_no_points_without_marks() -> None:
+    fills = (
+        Fill(order_id=1, side="buy", price=Decimal("100.0"), size=1, ts_ns=1),
+    )
+
+    assert build_equity_curve(fills, (), gc_spec()) == ()

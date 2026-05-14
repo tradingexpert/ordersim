@@ -29,6 +29,8 @@ A compiled execution engine may be added for scale, but it must implement the
 - same strategy order intents;
 - same fills;
 - same final position;
+- same execution summary;
+- same equity curve;
 - same order-intent log where replay exposes it.
 
 Compiled execution engines are selected by passing an engine factory to `Replay`:
@@ -86,6 +88,8 @@ reference engine and the candidate engine. It compares:
 
 - fills;
 - final position;
+- execution summary;
+- equity curve;
 - order-intent log.
 
 This is the required path for future C++ engines. Performance can improve, but

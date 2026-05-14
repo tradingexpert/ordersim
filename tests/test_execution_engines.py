@@ -214,9 +214,28 @@ def test_assert_equivalent_execution_engines_reports_differences() -> None:
         gateway.advance_to(1)
         gateway.place_market(side="buy", size=1)
 
+    events = (
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="ask",
+            price=Decimal("101.0"),
+            size=1,
+            order_id=1,
+        ),
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="bid",
+            price=Decimal("100.0"),
+            size=1,
+            order_id=2,
+        ),
+    )
+
     with pytest.raises(AssertionError) as exc_info:
         assert_equivalent_execution_engines(
-            data=tiny_events(),
+            data=events,
             instrument=gc_spec(),
             strategy=strategy,
             candidate_factory=NoFillEngine,
@@ -226,6 +245,8 @@ def test_assert_equivalent_execution_engines_reports_differences() -> None:
     assert "fills differ" in message
     assert "final positions differ" in message
     assert "order events differ" in message
+    assert "execution summaries differ" in message
+    assert "equity curves differ" in message
 
 
 def test_equivalence_harness_uses_public_queue_fixture() -> None:

@@ -58,6 +58,9 @@ def test_replay_runs_strategy_and_records_order_intent() -> None:
     assert result.execution_summary.signed_notional == Decimal("-10100.0")
     assert result.execution_summary.commission == Decimal("2.50")
     assert result.execution_summary.net_realized_pnl == Decimal("-2.50")
+    assert result.equity_curve[-1].mark_price == Decimal("100.5")
+    assert result.equity_curve[-1].equity == Decimal("-52.50")
+    assert result.equity_curve[-1].drawdown == Decimal("52.50")
     assert [event.kind for event in result.order_events] == [
         "place_limit",
         "cancel",
@@ -104,6 +107,7 @@ def test_replay_gateway_exposes_book_depth() -> None:
 
     assert result.fills == ()
     assert result.order_events == ()
+    assert result.equity_curve[-1].equity == Decimal("0")
 
 
 def test_replay_rejects_unaligned_event_prices() -> None:

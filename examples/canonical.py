@@ -46,3 +46,4 @@ if __name__ == "__main__":
     print(result.fills)
     print(result.order_events)
     print(result.execution_summary)
+    print(result.equity_curve)

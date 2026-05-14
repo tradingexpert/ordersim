@@ -5,7 +5,13 @@ from dataclasses import dataclass
 from typing import Any
 
 from ordersim.connectors import EventInput, normalize_events
-from ordersim.economics import ExecutionSummary, summarize_fills
+from ordersim.economics import (
+    EquityPoint,
+    ExecutionSummary,
+    ValuationMark,
+    build_equity_curve,
+    summarize_fills,
+)
 from ordersim.gateway import OrderGateway
 from ordersim.latency import (
     LatencyModel,
@@ -41,6 +47,7 @@ class ReplayResult:
     order_events: tuple[OrderEvent, ...]
     final_position: int
     execution_summary: ExecutionSummary
+    equity_curve: tuple[EquityPoint, ...]
 
 
 class ReplayGateway:
@@ -60,12 +67,19 @@ class ReplayGateway:
         self._cursor = 0
         self._now_ns = 0
         self._fills: list[Fill] = []
+        self._valuation_marks: list[ValuationMark] = []
 
     @property
     def fills(self) -> tuple[Fill, ...]:
         """All active and passive fills observed by this gateway."""
 
         return tuple(self._fills)
+
+    @property
+    def valuation_marks(self) -> tuple[ValuationMark, ...]:
+        """Midpoint valuation marks observed during replay."""
+
+        return tuple(self._valuation_marks)
 
     def advance_to(self, ts_ns: int) -> list[Fill]:
         """Advance replay time and return passive fills since the last call."""
@@ -81,6 +95,7 @@ class ReplayGateway:
             event = self._data[self._cursor]
             fills.extend(self._engine.apply_event(event))
             self._cursor += 1
+            self._record_valuation_mark(event.ts_ns)
 
         self._now_ns = ts_ns
         self._engine.advance_time(ts_ns)
@@ -99,6 +114,7 @@ class ReplayGateway:
         self._advance_to_venue_receipt()
         result = self._engine.place_limit(side=side, price=price, size=size, tif=tif)
         self._fills.extend(result.fills)
+        self._record_valuation_mark(self._now_ns)
         return result
 
     def place_market(self, side: Side, size: int) -> list[Fill]:
@@ -107,13 +123,16 @@ class ReplayGateway:
         self._advance_to_venue_receipt()
         fills = self._engine.place_market(side=side, size=size)
         self._fills.extend(fills)
+        self._record_valuation_mark(self._now_ns)
         return fills
 
     def cancel(self, order_id: OrderId) -> bool:
         """Cancel a resting own order."""
 
         self._advance_to_venue_receipt()
-        return self._engine.cancel(order_id)
+        accepted = self._engine.cancel(order_id)
+        self._record_valuation_mark(self._now_ns)
+        return accepted
 
     def book_top(self) -> tuple[Price | None, Price | None]:
         """Return ``(best_bid, best_ask)``."""
@@ -141,6 +160,14 @@ class ReplayGateway:
     def _advance_to_venue_receipt(self) -> None:
         sample = self._latency_model.sample(self._now_ns)
         self.advance_to(self._now_ns + sample.entry_ns)
+
+    def _record_valuation_mark(self, ts_ns: int) -> None:
+        bid, ask = self._engine.book_top()
+        if bid is None or ask is None:
+            return
+        self._valuation_marks.append(
+            ValuationMark(ts_ns=ts_ns, price=(bid + ask) / 2)
+        )
 
 
 class Replay:
@@ -191,11 +218,18 @@ class Replay:
         if self.record_to is not None:
             self.record_to.extend(order_events)
 
+        execution_summary = summarize_fills(gateway.fills, self.instrument)
+        equity_curve = build_equity_curve(
+            gateway.fills,
+            gateway.valuation_marks,
+            self.instrument,
+        )
         return ReplayResult(
             fills=gateway.fills,
             order_events=tuple(order_events),
             final_position=gateway.position(),
-            execution_summary=summarize_fills(gateway.fills, self.instrument),
+            execution_summary=execution_summary,
+            equity_curve=equity_curve,
         )
 
     def run_many(self, strategies: dict[str, Strategy]) -> dict[str, ReplayResult]:
