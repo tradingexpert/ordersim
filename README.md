@@ -168,10 +168,10 @@ Planned release sequence:
 
 - Assumptions: `docs/assumptions.md`
 - Engineering standards: `docs/engineering-standards.md`
+- Schema reference: `docs/schema.md`
 - AI agent guide: `AGENTS.md`
 
-API, schema, and extension recipe docs will land with the first package
-skeleton.
+API and extension recipe docs will land with the replay package skeleton.
 
 ## Contributing
 

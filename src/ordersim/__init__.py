@@ -2,8 +2,12 @@
 
 from ordersim.gateway import OrderGateway
 from ordersim.recording import RecordingGateway
+from ordersim.specs import InstrumentSpec
 from ordersim.types import (
+    BookSide,
     Fill,
+    MBOAction,
+    MBOEvent,
     OrderEvent,
     OrderId,
     OrderResult,
@@ -13,7 +17,11 @@ from ordersim.types import (
 )
 
 __all__ = [
+    "BookSide",
     "Fill",
+    "MBOAction",
+    "MBOEvent",
+    "InstrumentSpec",
     "OrderEvent",
     "OrderGateway",
     "OrderId",

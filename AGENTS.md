@@ -32,7 +32,7 @@ details.
 | `ordersim/sim/venue.py` | Latency-aware venue simulation | Internal |
 | `ordersim/oms/strategy_oms.py` | Order lifecycle management | Internal |
 | `ordersim/connectors/` | Data sources | Public extension surface |
-| `ordersim/specs/` | Instrument specifications | Public extension surface |
+| `ordersim/specs.py` | Instrument specifications | Public extension surface |
 | `examples/` | Complete user-facing examples | Public |
 | `docs/` | Assumptions, schemas, recipes | Public |
 
