@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Literal, TypeAlias
 
+BookSide: TypeAlias = Literal["bid", "ask"]
+MBOAction: TypeAlias = Literal["add", "cancel", "modify", "trade"]
 OrderId: TypeAlias = int
 Price: TypeAlias = Decimal
 Side: TypeAlias = Literal["buy", "sell"]
@@ -25,6 +27,32 @@ class Fill:
     price: Price
     size: int
     ts_ns: int
+
+
+@dataclass(frozen=True, slots=True)
+class MBOEvent:
+    """One normalized market-by-order event.
+
+    `side` is the resting book side affected by the event. For a trade, that
+    means the side of the resting order that traded, not the aggressor side.
+    """
+
+    ts_ns: int
+    action: MBOAction
+    side: BookSide
+    price: Price
+    size: int
+    order_id: OrderId
+
+    def __post_init__(self) -> None:
+        if self.ts_ns < 0:
+            raise ValueError("ts_ns must be non-negative")
+        if self.price <= 0:
+            raise ValueError("price must be positive")
+        if self.size <= 0:
+            raise ValueError("size must be positive")
+        if self.order_id < 0:
+            raise ValueError("order_id must be non-negative")
 
 
 @dataclass(frozen=True, slots=True)
