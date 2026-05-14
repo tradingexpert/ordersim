@@ -7,7 +7,12 @@ from typing import Any
 from ordersim.connectors import EventInput, normalize_events
 from ordersim.gateway import OrderGateway
 from ordersim.recording import RecordingGateway
-from ordersim.sim import MatchingEngine, PriceLevel
+from ordersim.sim import (
+    ExecutionEngine,
+    ExecutionEngineFactory,
+    PriceLevel,
+    default_execution_engine_factory,
+)
 from ordersim.specs import InstrumentSpec
 from ordersim.types import (
     Fill,
@@ -37,12 +42,12 @@ class ReplayGateway:
     def __init__(
         self,
         data: EventInput,
-        engine: MatchingEngine | None = None,
+        engine: ExecutionEngine | None = None,
     ) -> None:
         self._data = tuple(
             sorted(normalize_events(data), key=lambda event: event.ts_ns)
         )
-        self._engine = engine or MatchingEngine()
+        self._engine = engine or default_execution_engine_factory()
         self._cursor = 0
         self._now_ns = 0
         self._fills: list[Fill] = []
@@ -130,10 +135,14 @@ class Replay:
         data: EventInput,
         instrument: InstrumentSpec,
         record_to: MutableSequence[OrderEvent] | None = None,
+        execution_engine_factory: ExecutionEngineFactory | None = None,
     ) -> None:
         self.data = tuple(sorted(normalize_events(data), key=lambda event: event.ts_ns))
         self.instrument = instrument
         self.record_to = record_to
+        self._execution_engine_factory = (
+            execution_engine_factory or default_execution_engine_factory
+        )
         for event in self.data:
             instrument.assert_price_aligned(event.price)
 
@@ -145,7 +154,7 @@ class Replay:
     ) -> ReplayResult:
         """Run one strategy and return fills plus its order-intent log."""
 
-        gateway = ReplayGateway(self.data)
+        gateway = ReplayGateway(self.data, engine=self._execution_engine_factory())
         order_events: list[OrderEvent] = []
         recording_gateway = RecordingGateway(
             gateway,
