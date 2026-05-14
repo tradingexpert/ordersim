@@ -51,6 +51,7 @@ class RecordingGateway:
                     kind="fill",
                     ts_ns=fill.ts_ns,
                     order_id=fill.order_id,
+                    side=fill.side,
                     fill_price=fill.price,
                     fill_size=fill.size,
                     source=source,
@@ -65,6 +66,7 @@ class RecordingGateway:
                     kind="fill_passive",
                     ts_ns=fill.ts_ns,
                     order_id=fill.order_id,
+                    side=fill.side,
                     fill_price=fill.price,
                     fill_size=fill.size,
                 )

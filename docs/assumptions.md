@@ -61,6 +61,9 @@ The simulator distinguishes:
 - passive fills: fills that materialize later while an order rests;
 - cancels: cancellation attempts and their results.
 
+Fills always carry the strategy side. Active fills inherit the submitted order
+side. Passive fills map own bids to buys and own asks to sells.
+
 Final PnL alone is not enough. The order-intent log is a first-class output.
 
 ## Latency Assumptions

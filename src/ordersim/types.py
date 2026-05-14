@@ -21,9 +21,14 @@ EventKind: TypeAlias = Literal[
 
 @dataclass(frozen=True, slots=True)
 class Fill:
-    """A single execution fill observed by the strategy."""
+    """A single execution fill observed by the strategy.
+
+    `side` is the strategy side of the fill, not the resting public book side.
+    A passive fill of an own bid order is therefore `side="buy"`.
+    """
 
     order_id: OrderId
+    side: Side
     price: Price
     size: int
     ts_ns: int

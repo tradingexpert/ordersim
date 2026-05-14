@@ -35,12 +35,18 @@ class ScriptedEngine:
         size: int,
         tif: str = "GTC",
     ) -> OrderResult:
-        fill = Fill(order_id=10, price=price, size=size, ts_ns=self.ts_ns)
+        fill = Fill(order_id=10, side=side, price=price, size=size, ts_ns=self.ts_ns)
         self.signed_position += size if side == "buy" else -size
         return OrderResult(order_id=None, fills=(fill,))
 
     def place_market(self, side: str, size: int) -> list[Fill]:
-        fill = Fill(order_id=11, price=Decimal("101.0"), size=size, ts_ns=self.ts_ns)
+        fill = Fill(
+            order_id=11,
+            side=side,
+            price=Decimal("101.0"),
+            size=size,
+            ts_ns=self.ts_ns,
+        )
         self.signed_position += size if side == "buy" else -size
         return [fill]
 
@@ -140,8 +146,8 @@ def test_replay_accepts_execution_engine_factory() -> None:
     assert len(created) == 1
     assert created[0].events == list(tiny_events())
     assert result.final_position == 2
-    assert [(fill.price, fill.size) for fill in result.fills] == [
-        (Decimal("100.0"), 2),
+    assert [(fill.side, fill.price, fill.size) for fill in result.fills] == [
+        ("buy", Decimal("100.0"), 2),
     ]
 
 
@@ -237,8 +243,11 @@ def test_equivalence_harness_uses_public_queue_fixture() -> None:
 
     assert result.equivalent is True
     assert result.reference.final_position == 1
-    assert [(fill.price, fill.size, fill.ts_ns) for fill in result.reference.fills] == [
-        (Decimal("100.0"), 1, 5),
+    assert [
+        (fill.side, fill.price, fill.size, fill.ts_ns)
+        for fill in result.reference.fills
+    ] == [
+        ("buy", Decimal("100.0"), 1, 5),
     ]
 
 

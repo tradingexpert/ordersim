@@ -84,6 +84,7 @@ def test_public_trade_consumes_queue_ahead_then_passively_fills_own_order() -> N
     assert second_fills == [
         Fill(
             order_id=result.order_id,
+            side="buy",
             price=Decimal("100.0"),
             size=2,
             ts_ns=3,
@@ -108,12 +109,14 @@ def test_multiple_own_orders_advance_fifo_at_same_price() -> None:
     assert fills == [
         Fill(
             order_id=first.order_id,
+            side="buy",
             price=Decimal("100.0"),
             size=2,
             ts_ns=2,
         ),
         Fill(
             order_id=second.order_id,
+            side="buy",
             price=Decimal("100.0"),
             size=3,
             ts_ns=2,
@@ -133,6 +136,7 @@ def test_ask_side_passive_fill_decreases_position_and_removes_filled_order() -> 
     assert fills == [
         Fill(
             order_id=result.order_id,
+            side="sell",
             price=Decimal("101.0"),
             size=3,
             ts_ns=2,
@@ -185,9 +189,9 @@ def test_market_order_matches_best_prices_and_updates_position() -> None:
 
     fills = engine.place_market(side="buy", size=4)
 
-    assert [(fill.price, fill.size) for fill in fills] == [
-        (Decimal("101.0"), 2),
-        (Decimal("102.0"), 2),
+    assert [(fill.side, fill.price, fill.size) for fill in fills] == [
+        ("buy", Decimal("101.0"), 2),
+        ("buy", Decimal("102.0"), 2),
     ]
     assert engine.position() == 4
     assert engine.book_depth(2)[1] == (PriceLevel(Decimal("102.0"), 3),)
@@ -200,9 +204,9 @@ def test_sell_market_order_matches_bids_from_highest_price() -> None:
 
     fills = engine.place_market(side="sell", size=4)
 
-    assert [(fill.price, fill.size) for fill in fills] == [
-        (Decimal("100.0"), 2),
-        (Decimal("99.5"), 2),
+    assert [(fill.side, fill.price, fill.size) for fill in fills] == [
+        ("sell", Decimal("100.0"), 2),
+        ("sell", Decimal("99.5"), 2),
     ]
     assert engine.position() == -4
 
@@ -218,8 +222,8 @@ def test_ioc_limit_does_not_rest_remainder() -> None:
         tif="IOC",
     )
 
-    assert [(fill.price, fill.size) for fill in result.fills] == [
-        (Decimal("101.0"), 1),
+    assert [(fill.side, fill.price, fill.size) for fill in result.fills] == [
+        ("buy", Decimal("101.0"), 1),
     ]
     assert result.order_id is None
     assert engine.own_orders_snapshot() == ()
