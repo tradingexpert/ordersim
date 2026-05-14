@@ -54,6 +54,10 @@ def test_replay_runs_strategy_and_records_order_intent() -> None:
     assert [(fill.price, fill.size) for fill in result.fills] == [
         (Decimal("101.0"), 1),
     ]
+    assert result.execution_summary.contract_volume == 1
+    assert result.execution_summary.signed_notional == Decimal("-10100.0")
+    assert result.execution_summary.commission == Decimal("2.50")
+    assert result.execution_summary.net_realized_pnl == Decimal("-2.50")
     assert [event.kind for event in result.order_events] == [
         "place_limit",
         "cancel",

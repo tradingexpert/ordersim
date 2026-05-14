@@ -7,6 +7,11 @@ from ordersim.connectors import (
     InMemorySource,
     normalize_events,
 )
+from ordersim.economics import (
+    ExecutionSummary,
+    PositionLot,
+    summarize_fills,
+)
 from ordersim.gateway import OrderGateway
 from ordersim.latency import (
     ConstantLatency,
@@ -51,6 +56,7 @@ __all__ = [
     "EventInput",
     "ExecutionEngine",
     "ExecutionEngineFactory",
+    "ExecutionSummary",
     "Fill",
     "InMemorySource",
     "JitteredLatency",
@@ -66,6 +72,7 @@ __all__ = [
     "OrderGateway",
     "OrderId",
     "OrderResult",
+    "PositionLot",
     "Price",
     "PriceLevel",
     "Replay",
@@ -76,4 +83,5 @@ __all__ = [
     "TimeInForce",
     "default_latency_model_factory",
     "normalize_events",
+    "summarize_fills",
 ]

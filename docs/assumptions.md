@@ -66,6 +66,17 @@ side. Passive fills map own bids to buys and own asks to sells.
 
 Final PnL alone is not enough. The order-intent log is a first-class output.
 
+## Execution Economics Assumptions
+
+Replay results include a realized fill ledger computed from `InstrumentSpec`.
+The ledger uses FIFO lots, contract `point_value`, and
+`commission_per_contract`.
+
+This is not full portfolio accounting. It does not mark open positions to
+market, model margin, model funding, or reproduce broker statement rules. Its
+purpose is narrower: make realized execution economics deterministic and
+auditable from the fills.
+
 ## Latency Assumptions
 
 Latency is modeled in two legs:

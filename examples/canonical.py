@@ -45,3 +45,4 @@ if __name__ == "__main__":
     result = run()
     print(result.fills)
     print(result.order_events)
+    print(result.execution_summary)

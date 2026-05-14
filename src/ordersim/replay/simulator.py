@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ordersim.connectors import EventInput, normalize_events
+from ordersim.economics import ExecutionSummary, summarize_fills
 from ordersim.gateway import OrderGateway
 from ordersim.latency import (
     LatencyModel,
@@ -39,6 +40,7 @@ class ReplayResult:
     fills: tuple[Fill, ...]
     order_events: tuple[OrderEvent, ...]
     final_position: int
+    execution_summary: ExecutionSummary
 
 
 class ReplayGateway:
@@ -193,6 +195,7 @@ class Replay:
             fills=gateway.fills,
             order_events=tuple(order_events),
             final_position=gateway.position(),
+            execution_summary=summarize_fills(gateway.fills, self.instrument),
         )
 
     def run_many(self, strategies: dict[str, Strategy]) -> dict[str, ReplayResult]:
