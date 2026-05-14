@@ -80,10 +80,9 @@ pip install "ordersim[databento]"
 
 ## A Tiny Example
 
-This is the target API shape for `v0.1`.
-
 This example uses synthetic fixture data shipped with the package, so it does
-not require a market-data subscription.
+not require a market-data subscription. A runnable version lives in
+`examples/canonical.py`.
 
 ```python
 from decimal import Decimal
@@ -173,6 +172,7 @@ Planned release sequence:
 - Assumptions: `docs/assumptions.md`
 - Connectors: `docs/connectors.md`
 - Engineering standards: `docs/engineering-standards.md`
+- Example: `examples/canonical.py`
 - Schema reference: `docs/schema.md`
 - AI agent guide: `AGENTS.md`
 
