@@ -53,19 +53,19 @@ be slower than a compiled HFT framework. It is not allowed to be mysterious.
 - Replay ordering must be deterministic for identical input and seed.
 - Lower-fidelity modes must be named as lower fidelity.
 
-## Backend Policy
+## Engine Policy
 
-Compiled backends are allowed only as equivalent implementations.
+Compiled execution engines are allowed only as equivalent implementations.
 
-An acceptable compiled backend:
+An acceptable compiled execution engine:
 
-- produces the same fills as the Python backend on public fixtures;
+- produces the same fills as the Python engine on public fixtures;
 - preserves final position and cash/PnL accounting;
 - preserves observable order-intent behavior;
 - is optional at install time;
 - fails gracefully when unavailable.
 
-An unacceptable backend:
+An unacceptable engine:
 
 - drops queue position to gain speed;
 - ignores response latency;

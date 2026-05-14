@@ -111,15 +111,18 @@ In one sentence:
 > afternoon. Sampling from the distribution your measurements imply tells you
 > how the strategy might survive afternoons it has not seen yet.
 
-## Backend Assumptions
+## Engine Assumptions
 
-The pure Python backend is the reference implementation because it is readable
+The pure Python engine is the reference implementation because it is readable
 and debuggable.
 
-Compiled backends may be added for scale, but they are not allowed to change
-semantics. A backend is acceptable only when public equivalence fixtures show
-the same fills and final state as the Python backend for the same replay and
+Compiled execution engines may be added for scale, but they are not allowed to
+change semantics. An engine is acceptable only when public equivalence fixtures
+show the same fills and final state as the Python engine for the same replay and
 strategy actions.
+
+Engines consume normalized `MBOEvent` rows. Vendor data ingestion belongs to
+connectors, not to the execution engine.
 
 Performance modes that reduce fidelity must be named as separate models. They
 must not be hidden behind words like "fast" or "optimized."

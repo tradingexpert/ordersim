@@ -1,0 +1,45 @@
+# Execution Engines
+
+Execution engines consume normalized `MBOEvent` rows and strategy order intents.
+They do not read vendor data directly.
+
+The architecture is:
+
+```text
+vendor data -> DataSource -> MBOEvent -> Replay -> ExecutionEngine
+```
+
+That means a Databento connector and a C++ execution engine are different
+extension points:
+
+- a connector normalizes source data into `MBOEvent`;
+- an execution engine decides how strategy orders interact with those events.
+
+## Reference Engine
+
+`MatchingEngine` is the pure Python reference engine. It is intentionally
+plain and inspectable. Public behavior should be judged against it.
+
+## Compiled Engine Policy
+
+A compiled execution engine may be added for scale, but it must implement the
+`ExecutionEngine` protocol and preserve observable behavior:
+
+- same input events;
+- same strategy order intents;
+- same fills;
+- same final position;
+- same order-intent log where replay exposes it.
+
+Compiled execution engines are selected by passing an engine factory to `Replay`:
+
+```python
+replay = Replay(
+    data=source,
+    instrument=spec,
+    execution_engine_factory=my_execution_engine_factory,
+)
+```
+
+`Replay.run_many(...)` creates a fresh engine for each strategy run, so each
+strategy has isolated order state while sharing the same immutable event stream.

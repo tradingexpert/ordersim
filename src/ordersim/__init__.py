@@ -1,10 +1,20 @@
 """Public API for ordersim."""
 
-from ordersim.connectors import DataSource, EventInput, InMemorySource, normalize_events
+from ordersim.connectors import (
+    DataSource,
+    EventInput,
+    InMemorySource,
+    normalize_events,
+)
 from ordersim.gateway import OrderGateway
 from ordersim.recording import RecordingGateway
 from ordersim.replay import Replay, ReplayGateway, ReplayResult
-from ordersim.sim import MatchingEngine, PriceLevel
+from ordersim.sim import (
+    ExecutionEngine,
+    ExecutionEngineFactory,
+    MatchingEngine,
+    PriceLevel,
+)
 from ordersim.specs import InstrumentSpec
 from ordersim.types import (
     BookSide,
@@ -23,6 +33,8 @@ __all__ = [
     "BookSide",
     "DataSource",
     "EventInput",
+    "ExecutionEngine",
+    "ExecutionEngineFactory",
     "Fill",
     "InMemorySource",
     "MBOAction",

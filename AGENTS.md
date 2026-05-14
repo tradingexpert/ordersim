@@ -34,6 +34,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/connectors/` | Data source contracts | Yes |
 | `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Yes |
 | `ordersim/replay/factory.py` | Builds feed, venue, OMS, portfolio | Planned internal |
+| `ordersim/sim/execution.py` | Execution engine protocol | Yes |
 | `ordersim/sim/matching_engine.py` | MBO matching and queue tracking reference | Yes |
 | `ordersim/sim/feed.py` | Event replay cursor | Planned internal |
 | `ordersim/sim/venue.py` | Latency-aware venue simulation | Planned internal |
@@ -97,18 +98,22 @@ as `ordersim[databento]`.
 Latency models should make assumptions visible. They should not imply that a
 recorded latency path is the only realistic future path.
 
-### Add a Matching Backend
+### Add an Execution Engine
 
-Backends are implementation details. They must not change behavior.
+Engines implement `ExecutionEngine`. They must not change behavior.
 
-Any compiled backend must pass replay-equivalence tests against the Python
-backend before release:
+Any compiled execution engine must pass replay-equivalence tests against the
+Python engine before release:
 
 - same input events;
 - same strategy actions;
 - same fills;
 - same final position;
 - same order-intent log where the public API observes it.
+
+Engines consume normalized `MBOEvent` rows. Do not make an engine responsible
+for reading Databento, CSV, Parquet, or any other source format; that belongs in
+a connector.
 
 ## Things Not To Do
 

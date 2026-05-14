@@ -161,7 +161,7 @@ same input.
 Planned release sequence:
 
 - `v0.1`: pure Python, inspectable by default.
-- `v0.2`: optional compiled matching backend, required to pass Python
+- `v0.2`: optional compiled execution engine, required to pass Python
   equivalence fixtures before release.
 - `v1.0`: research-grade execution lab with notebook-first workflows,
   connector recipes, latency model gallery, and public replay-equivalence
@@ -170,6 +170,7 @@ Planned release sequence:
 ## Documentation
 
 - Assumptions: `docs/assumptions.md`
+- Execution engines: `docs/execution-engines.md`
 - Connectors: `docs/connectors.md`
 - Engineering standards: `docs/engineering-standards.md`
 - Example: `examples/canonical.py`

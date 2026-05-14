@@ -1,7 +1,7 @@
 """Reference Python matching engine.
 
 This module is intentionally plain Python. It is the behavior reference that a
-future compiled backend must match before it can be trusted.
+future compiled execution engine must match before it can be trusted.
 """
 
 from dataclasses import dataclass
