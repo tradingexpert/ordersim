@@ -172,6 +172,13 @@ class MatchingEngine:
 
         return self._now_ns
 
+    def advance_time(self, ts_ns: int) -> None:
+        """Advance engine time without applying a market-data event."""
+
+        if ts_ns < self._now_ns:
+            raise ValueError("cannot move engine time backwards")
+        self._now_ns = ts_ns
+
     def own_orders_snapshot(
         self,
     ) -> tuple[tuple[OrderId, BookSide, Price, int, int], ...]:

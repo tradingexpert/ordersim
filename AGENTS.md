@@ -32,7 +32,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/types.py` | Public dataclasses and type aliases | Yes |
 | `ordersim/fixtures/` | Tiny public fixtures for examples and tests | Public |
 | `ordersim/connectors/` | Data sources | Planned public extension surface |
-| `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Planned public API |
+| `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Yes |
 | `ordersim/replay/factory.py` | Builds feed, venue, OMS, portfolio | Planned internal |
 | `ordersim/sim/matching_engine.py` | MBO matching and queue tracking reference | Yes |
 | `ordersim/sim/feed.py` | Event replay cursor | Planned internal |
