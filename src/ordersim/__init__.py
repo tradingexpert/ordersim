@@ -1,6 +1,7 @@
 """Public API for ordersim."""
 
 from ordersim.connectors import (
+    CsvSource,
     DataSource,
     EventInput,
     InMemorySource,
@@ -43,6 +44,7 @@ from ordersim.types import (
 __all__ = [
     "BookSide",
     "ConstantLatency",
+    "CsvSource",
     "DataSource",
     "EmpiricalBootstrap",
     "EmpiricalPlayback",

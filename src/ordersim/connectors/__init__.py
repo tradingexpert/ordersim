@@ -6,5 +6,12 @@ from ordersim.connectors.base import (
     InMemorySource,
     normalize_events,
 )
+from ordersim.connectors.csv import CsvSource
 
-__all__ = ["DataSource", "EventInput", "InMemorySource", "normalize_events"]
+__all__ = [
+    "CsvSource",
+    "DataSource",
+    "EventInput",
+    "InMemorySource",
+    "normalize_events",
+]
