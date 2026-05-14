@@ -45,3 +45,12 @@ modify.
 The fixture ships in the package because examples and tests should run without
 private data or a paid data subscription. It is not a connector and is not meant
 to be statistically realistic.
+
+## `DataSource`
+
+A `DataSource` is any object with an `events()` method that yields normalized
+`MBOEvent` rows. Replay accepts either a `DataSource` or a plain iterable of
+`MBOEvent`.
+
+Connector-specific input schemas belong in connector documentation. The replay
+boundary should remain the normalized `MBOEvent` schema above.

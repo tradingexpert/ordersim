@@ -1,16 +1,16 @@
 """Small replay runner built around the reference matching engine."""
 
-from collections.abc import Callable, Iterable, MutableSequence
+from collections.abc import Callable, MutableSequence
 from dataclasses import dataclass
 from typing import Any
 
+from ordersim.connectors import EventInput, normalize_events
 from ordersim.gateway import OrderGateway
 from ordersim.recording import RecordingGateway
 from ordersim.sim import MatchingEngine, PriceLevel
 from ordersim.specs import InstrumentSpec
 from ordersim.types import (
     Fill,
-    MBOEvent,
     OrderEvent,
     OrderId,
     OrderResult,
@@ -36,10 +36,12 @@ class ReplayGateway:
 
     def __init__(
         self,
-        data: Iterable[MBOEvent],
+        data: EventInput,
         engine: MatchingEngine | None = None,
     ) -> None:
-        self._data = tuple(sorted(data, key=lambda event: event.ts_ns))
+        self._data = tuple(
+            sorted(normalize_events(data), key=lambda event: event.ts_ns)
+        )
         self._engine = engine or MatchingEngine()
         self._cursor = 0
         self._now_ns = 0
@@ -125,11 +127,11 @@ class Replay:
 
     def __init__(
         self,
-        data: Iterable[MBOEvent],
+        data: EventInput,
         instrument: InstrumentSpec,
         record_to: MutableSequence[OrderEvent] | None = None,
     ) -> None:
-        self.data = tuple(sorted(data, key=lambda event: event.ts_ns))
+        self.data = tuple(sorted(normalize_events(data), key=lambda event: event.ts_ns))
         self.instrument = instrument
         self.record_to = record_to
         for event in self.data:
