@@ -35,6 +35,27 @@ class ExecutionSummary:
     open_lots: tuple[PositionLot, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class ValuationMark:
+    """One mark price used to value open lots."""
+
+    ts_ns: int
+    price: Price
+
+
+@dataclass(frozen=True, slots=True)
+class EquityPoint:
+    """One point on a mark-to-market equity curve."""
+
+    ts_ns: int
+    mark_price: Price
+    realized_pnl: Decimal
+    unrealized_pnl: Decimal
+    commission: Decimal
+    equity: Decimal
+    drawdown: Decimal
+
+
 def summarize_fills(
     fills: tuple[Fill, ...] | list[Fill],
     instrument: InstrumentSpec,
@@ -77,6 +98,54 @@ def summarize_fills(
         final_position=final_position,
         open_lots=tuple(open_lots),
     )
+
+
+def build_equity_curve(
+    fills: tuple[Fill, ...] | list[Fill],
+    marks: tuple[ValuationMark, ...] | list[ValuationMark],
+    instrument: InstrumentSpec,
+) -> tuple[EquityPoint, ...]:
+    """Build a mark-to-market equity curve from fills and valuation marks.
+
+    Fills at the same timestamp as a mark are processed before that mark. Equity
+    is `realized_pnl + unrealized_pnl - commission`.
+    """
+
+    sorted_fills = tuple(sorted(fills, key=lambda fill: fill.ts_ns))
+    sorted_marks = tuple(sorted(marks, key=lambda mark: mark.ts_ns))
+    open_lots: list[PositionLot] = []
+    realized_pnl = Decimal("0")
+    commission = Decimal("0")
+    high_water_mark = Decimal("0")
+    points: list[EquityPoint] = []
+    fill_index = 0
+
+    for mark in sorted_marks:
+        while (
+            fill_index < len(sorted_fills)
+            and sorted_fills[fill_index].ts_ns <= mark.ts_ns
+        ):
+            fill = sorted_fills[fill_index]
+            realized_pnl += _apply_fill_to_lots(open_lots, fill, instrument)
+            commission += instrument.commission_per_contract * fill.size
+            fill_index += 1
+
+        unrealized_pnl = _unrealized_pnl(open_lots, mark.price, instrument)
+        equity = realized_pnl + unrealized_pnl - commission
+        high_water_mark = max(high_water_mark, equity)
+        points.append(
+            EquityPoint(
+                ts_ns=mark.ts_ns,
+                mark_price=mark.price,
+                realized_pnl=realized_pnl,
+                unrealized_pnl=unrealized_pnl,
+                commission=commission,
+                equity=equity,
+                drawdown=high_water_mark - equity,
+            )
+        )
+
+    return tuple(points)
 
 
 def _apply_fill_to_lots(
@@ -128,3 +197,20 @@ def _closed_lot_pnl(
     if open_side == "buy":
         return (close_price - open_price) * size * point_value
     return (open_price - close_price) * size * point_value
+
+
+def _unrealized_pnl(
+    open_lots: list[PositionLot],
+    mark_price: Price,
+    instrument: InstrumentSpec,
+) -> Decimal:
+    total = Decimal("0")
+    for lot in open_lots:
+        total += _closed_lot_pnl(
+            open_side=lot.side,
+            open_price=lot.price,
+            close_price=mark_price,
+            size=lot.size,
+            point_value=instrument.point_value,
+        )
+    return total

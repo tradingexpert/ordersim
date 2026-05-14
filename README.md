@@ -137,11 +137,12 @@ result = replay.run(strategy)
 print(result.fills)
 print(result.order_events)
 print(result.execution_summary)
+print(result.equity_curve)
 ```
 
 The important output is not just final realized PnL. The important output is
-the fill ledger and event log showing what the strategy tried to do and what
-the simulated venue did in response.
+the fill ledger, equity curve, and event log showing what the strategy tried to
+do and what the simulated venue did in response.
 
 Strategies advance replay time explicitly with `gateway.advance_to(...)`; the
 library supplies execution semantics, not a strategy framework.

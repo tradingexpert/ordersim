@@ -71,6 +71,27 @@ feeding events into matching or replay code.
 
 See `docs/economics.md` for the assumptions and explicit non-goals.
 
+## `ValuationMark` And `EquityPoint`
+
+`ValuationMark` is an input mark used to value open lots.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ts_ns` | `int` | Mark timestamp in integer nanoseconds. |
+| `price` | `Decimal` | Price used for open-lot valuation. |
+
+`EquityPoint` is one output row from a mark-to-market equity curve.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ts_ns` | `int` | Valuation timestamp. |
+| `mark_price` | `Decimal` | Price used to value open lots. |
+| `realized_pnl` | `Decimal` | FIFO realized PnL through the mark. |
+| `unrealized_pnl` | `Decimal` | Open-lot PnL at `mark_price`. |
+| `commission` | `Decimal` | Commission accrued through the mark. |
+| `equity` | `Decimal` | Realized plus unrealized PnL minus commission. |
+| `drawdown` | `Decimal` | Positive drop from the equity high-water mark. |
+
 ## Synthetic Fixture
 
 `ordersim.fixtures.synthetic.SyntheticSource.small_mbo()` returns a tiny

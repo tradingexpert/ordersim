@@ -29,6 +29,8 @@ class ExecutionEquivalenceResult:
         return (
             self.reference.fills == self.candidate.fills
             and self.reference.final_position == self.candidate.final_position
+            and self.reference.execution_summary == self.candidate.execution_summary
+            and self.reference.equity_curve == self.candidate.equity_curve
             and self.reference.order_events == self.candidate.order_events
         )
 
@@ -178,5 +180,16 @@ def _format_difference(result: ExecutionEquivalenceResult) -> str:
         differences.append(
             f"order events differ: reference={result.reference.order_events!r} "
             f"candidate={result.candidate.order_events!r}"
+        )
+    if result.reference.execution_summary != result.candidate.execution_summary:
+        differences.append(
+            "execution summaries differ: "
+            f"reference={result.reference.execution_summary!r} "
+            f"candidate={result.candidate.execution_summary!r}"
+        )
+    if result.reference.equity_curve != result.candidate.equity_curve:
+        differences.append(
+            f"equity curves differ: reference={result.reference.equity_curve!r} "
+            f"candidate={result.candidate.equity_curve!r}"
         )
     return "execution engines are not equivalent; " + "; ".join(differences)
