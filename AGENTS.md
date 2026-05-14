@@ -128,6 +128,9 @@ engine implementation.
 Use `SyntheticSource.execution_equivalence_mbo()` as the first public fixture
 for engine equivalence tests.
 
+Use `ordersim.testing.assert_execution_equivalence_suite` as the default smoke
+suite for alternative or compiled engines.
+
 ## Things Not To Do
 
 - Do not add a strategy framework.
