@@ -60,6 +60,11 @@ assert_equivalent_execution_engines(
 )
 ```
 
+For a tiny public queue-priority case, use
+`SyntheticSource.execution_equivalence_mbo()` as the data input. It exercises
+add, modify, cancel, trade, queue-ahead consumption, and passive fill behavior
+without requiring paid market data.
+
 The harness runs the same immutable event stream and strategy through the
 reference engine and the candidate engine. It compares:
 

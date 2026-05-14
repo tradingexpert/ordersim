@@ -3,6 +3,7 @@ from decimal import Decimal
 import pytest
 
 from ordersim import InstrumentSpec, MatchingEngine, MBOEvent, Replay
+from ordersim.fixtures.synthetic import SyntheticSource
 from ordersim.sim import ExecutionEngine, default_execution_engine_factory
 from ordersim.testing import (
     assert_equivalent_execution_engines,
@@ -217,3 +218,23 @@ def test_assert_equivalent_execution_engines_reports_differences() -> None:
     assert "fills differ" in message
     assert "final positions differ" in message
     assert "order events differ" in message
+
+
+def test_equivalence_harness_uses_public_queue_fixture() -> None:
+    def strategy(gateway) -> None:
+        gateway.advance_to(2)
+        gateway.place_limit(side="buy", price=Decimal("100.0"), size=1)
+        gateway.advance_to(5)
+
+    result = assert_equivalent_execution_engines(
+        data=SyntheticSource.execution_equivalence_mbo(),
+        instrument=gc_spec(),
+        strategy=strategy,
+        candidate_factory=MatchingEngine,
+    )
+
+    assert result.equivalent is True
+    assert result.reference.final_position == 1
+    assert [(fill.price, fill.size, fill.ts_ns) for fill in result.reference.fills] == [
+        (Decimal("100.0"), 1, 5),
+    ]
