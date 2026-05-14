@@ -16,6 +16,24 @@ class LatencyModel(Protocol):
     def sample(self, ts_ns: int, regime: str | None = None) -> LatencySample: ...
 ```
 
+## Which Model Should I Use?
+
+Use `EmpiricalBootstrap` when you have latency measurements and want the most
+useful research default. It samples many plausible latency paths from the
+measurements you supplied, stays reproducible with a seed, and avoids treating
+one recorded afternoon as the only future path.
+
+Use `ConstantLatency` for smoke tests, examples, and baseline comparisons. It
+is easy to explain and should usually be the first model in a minimal example.
+
+Use `EmpiricalPlayback` when you need exact regression against one recorded
+latency series. It is intentionally not the recommended robustness model,
+because exact playback repeats one historical realization.
+
+Use `JitteredLatency` for quick sensitivity checks when you do not yet have
+real measurements. Replace it with empirical measurements before making
+research claims.
+
 ## Reference Models
 
 `ConstantLatency` returns the same two-leg sample every time. It is useful for
@@ -34,6 +52,29 @@ you want many plausible paths drawn from the measurements you supplied.
 
 Both empirical models can filter by `regime` when measurements include regime
 labels.
+
+## Replay Behavior
+
+`Replay` accepts a `latency_model_factory`. A fresh model is created for each
+strategy run, so seeded or stateful models do not leak state across `run_many`.
+
+```python
+from ordersim import ConstantLatency, Replay
+
+replay = Replay(
+    data=source,
+    instrument=spec,
+    latency_model_factory=lambda: ConstantLatency(entry_ns=25_000_000),
+)
+```
+
+The current replay gateway applies the entry-latency leg to side-effecting
+order calls: limit orders, market orders, and cancels. If market-data events
+arrive before the simulated venue receives the order or cancel, those events
+are applied first.
+
+The response-latency leg is part of the public model contract, but replay does
+not yet delay local strategy observation of fills.
 
 ## Planned Models
 

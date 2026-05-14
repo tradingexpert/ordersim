@@ -74,9 +74,20 @@ Current public models include constant latency, seeded uniform jitter,
 empirical playback, and seeded empirical bootstrap. Planned models include
 parametric sampling. Random models must be seedable.
 
+The recommended research default is seeded empirical bootstrap when latency
+measurements are available. Constant latency is best for examples and
+baselines. Exact playback is best for debugging one recorded path, not for
+claiming robustness.
+
+Replay applies the entry-latency leg to limit orders, market orders, and
+cancels. Market-data events that occur before simulated venue receipt are
+processed before the order action reaches the execution engine.
+
+The response-latency leg is currently exposed by the public model contract but
+is not yet used to delay local strategy observation of fills.
+
 Different strategies in the same replay may use different latency models. This
-is useful for A/B tests and for studying execution sensitivity once the
-latency-aware venue layer is added.
+is useful for A/B tests and for studying execution sensitivity.
 
 ## On Replay Accuracy For Latency
 

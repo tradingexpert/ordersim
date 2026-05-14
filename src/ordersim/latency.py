@@ -9,7 +9,7 @@ The models in this module do not predict venue behavior. They make simple,
 testable latency assumptions available to replay and venue code.
 """
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from random import Random
 from typing import Protocol
@@ -47,6 +47,15 @@ class LatencyModel(Protocol):
 
     def sample(self, ts_ns: int, regime: str | None = None) -> LatencySample:
         """Return latency for an order or observation at ``ts_ns``."""
+
+
+LatencyModelFactory = Callable[[], LatencyModel]
+
+
+def default_latency_model_factory() -> LatencyModel:
+    """Return the default zero-latency model."""
+
+    return ConstantLatency()
 
 
 @dataclass(frozen=True, slots=True)

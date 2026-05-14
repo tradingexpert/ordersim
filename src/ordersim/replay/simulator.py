@@ -6,6 +6,11 @@ from typing import Any
 
 from ordersim.connectors import EventInput, normalize_events
 from ordersim.gateway import OrderGateway
+from ordersim.latency import (
+    LatencyModel,
+    LatencyModelFactory,
+    default_latency_model_factory,
+)
 from ordersim.recording import RecordingGateway
 from ordersim.sim import (
     ExecutionEngine,
@@ -43,11 +48,13 @@ class ReplayGateway:
         self,
         data: EventInput,
         engine: ExecutionEngine | None = None,
+        latency_model: LatencyModel | None = None,
     ) -> None:
         self._data = tuple(
             sorted(normalize_events(data), key=lambda event: event.ts_ns)
         )
         self._engine = engine or default_execution_engine_factory()
+        self._latency_model = latency_model or default_latency_model_factory()
         self._cursor = 0
         self._now_ns = 0
         self._fills: list[Fill] = []
@@ -87,6 +94,7 @@ class ReplayGateway:
     ) -> OrderResult:
         """Place a limit order through the matching engine."""
 
+        self._advance_to_venue_receipt()
         result = self._engine.place_limit(side=side, price=price, size=size, tif=tif)
         self._fills.extend(result.fills)
         return result
@@ -94,6 +102,7 @@ class ReplayGateway:
     def place_market(self, side: Side, size: int) -> list[Fill]:
         """Place a market order through the matching engine."""
 
+        self._advance_to_venue_receipt()
         fills = self._engine.place_market(side=side, size=size)
         self._fills.extend(fills)
         return fills
@@ -101,6 +110,7 @@ class ReplayGateway:
     def cancel(self, order_id: OrderId) -> bool:
         """Cancel a resting own order."""
 
+        self._advance_to_venue_receipt()
         return self._engine.cancel(order_id)
 
     def book_top(self) -> tuple[Price | None, Price | None]:
@@ -126,6 +136,10 @@ class ReplayGateway:
 
         return self._now_ns
 
+    def _advance_to_venue_receipt(self) -> None:
+        sample = self._latency_model.sample(self._now_ns)
+        self.advance_to(self._now_ns + sample.entry_ns)
+
 
 class Replay:
     """Run one or more strategies over the same immutable MBO event stream."""
@@ -136,12 +150,16 @@ class Replay:
         instrument: InstrumentSpec,
         record_to: MutableSequence[OrderEvent] | None = None,
         execution_engine_factory: ExecutionEngineFactory | None = None,
+        latency_model_factory: LatencyModelFactory | None = None,
     ) -> None:
         self.data = tuple(sorted(normalize_events(data), key=lambda event: event.ts_ns))
         self.instrument = instrument
         self.record_to = record_to
         self._execution_engine_factory = (
             execution_engine_factory or default_execution_engine_factory
+        )
+        self._latency_model_factory = (
+            latency_model_factory or default_latency_model_factory
         )
         for event in self.data:
             instrument.assert_price_aligned(event.price)
@@ -154,7 +172,11 @@ class Replay:
     ) -> ReplayResult:
         """Run one strategy and return fills plus its order-intent log."""
 
-        gateway = ReplayGateway(self.data, engine=self._execution_engine_factory())
+        gateway = ReplayGateway(
+            self.data,
+            engine=self._execution_engine_factory(),
+            latency_model=self._latency_model_factory(),
+        )
         order_events: list[OrderEvent] = []
         recording_gateway = RecordingGateway(
             gateway,

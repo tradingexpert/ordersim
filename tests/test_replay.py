@@ -2,7 +2,15 @@ from decimal import Decimal
 
 import pytest
 
-from ordersim import InstrumentSpec, MBOEvent, PriceLevel, Replay
+from ordersim import (
+    ConstantLatency,
+    EmpiricalPlayback,
+    InstrumentSpec,
+    LatencyMeasurement,
+    MBOEvent,
+    PriceLevel,
+    Replay,
+)
 from ordersim.fixtures.synthetic import SyntheticSource
 from ordersim.types import OrderEvent
 
@@ -119,3 +127,134 @@ def test_replay_gateway_rejects_backwards_time() -> None:
 
     with pytest.raises(ValueError, match="backwards"):
         replay.run(strategy)
+
+
+def test_replay_applies_entry_latency_before_market_order() -> None:
+    events = (
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="ask",
+            price=Decimal("101.0"),
+            size=1,
+            order_id=1,
+        ),
+        MBOEvent(
+            ts_ns=10,
+            action="cancel",
+            side="ask",
+            price=Decimal("101.0"),
+            size=1,
+            order_id=1,
+        ),
+        MBOEvent(
+            ts_ns=12,
+            action="add",
+            side="ask",
+            price=Decimal("102.0"),
+            size=1,
+            order_id=2,
+        ),
+    )
+    replay = Replay(
+        data=events,
+        instrument=gc_spec(),
+        latency_model_factory=lambda: ConstantLatency(entry_ns=10),
+    )
+
+    def strategy(gateway) -> None:
+        gateway.advance_to(5)
+        gateway.place_market(side="buy", size=1)
+
+    result = replay.run(strategy)
+
+    assert [(fill.price, fill.ts_ns) for fill in result.fills] == [
+        (Decimal("102.0"), 15),
+    ]
+
+
+def test_recording_gateway_records_passive_fill_during_cancel_latency() -> None:
+    events = (
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="bid",
+            price=Decimal("100.0"),
+            size=1,
+            order_id=1,
+        ),
+        MBOEvent(
+            ts_ns=5,
+            action="trade",
+            side="bid",
+            price=Decimal("100.0"),
+            size=2,
+            order_id=1,
+        ),
+    )
+    replay = Replay(
+        data=events,
+        instrument=gc_spec(),
+        latency_model_factory=lambda: EmpiricalPlayback.from_measurements(
+            (
+                LatencyMeasurement(ts_ns=1, entry_ns=0, response_ns=0),
+                LatencyMeasurement(ts_ns=2, entry_ns=10, response_ns=0),
+            )
+        ),
+    )
+
+    def strategy(gateway) -> None:
+        gateway.advance_to(1)
+        result = gateway.place_limit(side="buy", price=Decimal("100.0"), size=1)
+
+        assert result.order_id is not None
+        accepted = gateway.cancel(result.order_id)
+
+        assert accepted is False
+
+    result = replay.run(strategy)
+
+    assert result.final_position == 1
+    assert [event.kind for event in result.order_events] == [
+        "place_limit",
+        "fill_passive",
+        "cancel",
+    ]
+    assert result.order_events[1].fill_price == Decimal("100.0")
+    assert result.order_events[1].ts_ns == 5
+
+
+def test_run_many_uses_fresh_latency_model_per_strategy() -> None:
+    created = 0
+    events = (
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="ask",
+            price=Decimal("101.0"),
+            size=2,
+            order_id=1,
+        ),
+    )
+
+    def latency_factory() -> EmpiricalPlayback:
+        nonlocal created
+        created += 1
+        return EmpiricalPlayback.from_measurements(
+            (LatencyMeasurement(ts_ns=1, entry_ns=0, response_ns=0),)
+        )
+
+    replay = Replay(
+        data=events,
+        instrument=gc_spec(),
+        latency_model_factory=latency_factory,
+    )
+
+    def strategy(gateway) -> None:
+        gateway.advance_to(1)
+        gateway.place_market(side="buy", size=1)
+
+    results = replay.run_many({"a": strategy, "b": strategy})
+
+    assert created == 2
+    assert results["a"].fills == results["b"].fills

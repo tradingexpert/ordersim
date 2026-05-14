@@ -57,10 +57,7 @@ class RecordingGateway:
                 )
             )
 
-    def advance_to(self, ts_ns: int) -> list[Fill]:
-        """Advance replay time and record passive fills."""
-
-        fills = self._inner.advance_to(ts_ns)
+    def _record_passive_fills(self, fills: list[Fill]) -> None:
         for fill in fills:
             self._record(
                 OrderEvent(
@@ -72,6 +69,26 @@ class RecordingGateway:
                     fill_size=fill.size,
                 )
             )
+
+    def _observed_fills(self) -> tuple[Fill, ...]:
+        return tuple(getattr(self._inner, "fills", ()))
+
+    def _new_passive_fills(
+        self,
+        before: tuple[Fill, ...],
+        active_fills: tuple[Fill, ...] = (),
+    ) -> list[Fill]:
+        new_fills = list(self._observed_fills()[len(before) :])
+        for fill in active_fills:
+            if fill in new_fills:
+                new_fills.remove(fill)
+        return new_fills
+
+    def advance_to(self, ts_ns: int) -> list[Fill]:
+        """Advance replay time and record passive fills."""
+
+        fills = self._inner.advance_to(ts_ns)
+        self._record_passive_fills(fills)
         return fills
 
     def place_limit(
@@ -83,7 +100,9 @@ class RecordingGateway:
     ) -> OrderResult:
         """Place a limit order and record the attempt plus immediate fills."""
 
+        before = self._observed_fills()
         result = self._inner.place_limit(side=side, price=price, size=size, tif=tif)
+        self._record_passive_fills(self._new_passive_fills(before, result.fills))
         self._record(
             OrderEvent(
                 strategy=self._strategy,
@@ -103,7 +122,9 @@ class RecordingGateway:
     def place_market(self, side: Side, size: int) -> list[Fill]:
         """Place a market order and record the attempt plus fills."""
 
+        before = self._observed_fills()
         fills = self._inner.place_market(side=side, size=size)
+        self._record_passive_fills(self._new_passive_fills(before, tuple(fills)))
         self._record(
             OrderEvent(
                 strategy=self._strategy,
@@ -120,7 +141,9 @@ class RecordingGateway:
     def cancel(self, order_id: OrderId) -> bool:
         """Cancel an order and record whether the cancel was accepted."""
 
+        before = self._observed_fills()
         accepted = self._inner.cancel(order_id)
+        self._record_passive_fills(self._new_passive_fills(before))
         self._record(
             OrderEvent(
                 strategy=self._strategy,
