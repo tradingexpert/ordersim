@@ -65,6 +65,22 @@ For a tiny public queue-priority case, use
 add, modify, cancel, trade, queue-ahead consumption, and passive fill behavior
 without requiring paid market data.
 
+For the built-in smoke suite, use:
+
+```python
+from ordersim.testing import assert_execution_equivalence_suite
+
+assert_execution_equivalence_suite(
+    instrument=spec,
+    candidate_factory=my_execution_engine_factory,
+)
+```
+
+The suite currently includes:
+
+- `market-order-crosses-spread`;
+- `queue-ahead-passive-fill`.
+
 The harness runs the same immutable event stream and strategy through the
 reference engine and the candidate engine. It compares:
 

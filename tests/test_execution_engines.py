@@ -7,7 +7,9 @@ from ordersim.fixtures.synthetic import SyntheticSource
 from ordersim.sim import ExecutionEngine, default_execution_engine_factory
 from ordersim.testing import (
     assert_equivalent_execution_engines,
+    assert_execution_equivalence_suite,
     compare_execution_engines,
+    execution_equivalence_cases,
 )
 from ordersim.types import Fill, OrderResult
 
@@ -238,3 +240,32 @@ def test_equivalence_harness_uses_public_queue_fixture() -> None:
     assert [(fill.price, fill.size, fill.ts_ns) for fill in result.reference.fills] == [
         (Decimal("100.0"), 1, 5),
     ]
+
+
+def test_execution_equivalence_cases_are_named_and_runnable() -> None:
+    cases = execution_equivalence_cases()
+
+    assert [case.name for case in cases] == [
+        "market-order-crosses-spread",
+        "queue-ahead-passive-fill",
+    ]
+    assert all(case.data for case in cases)
+
+
+def test_execution_equivalence_suite_passes_for_reference_engine() -> None:
+    results = assert_execution_equivalence_suite(
+        instrument=gc_spec(),
+        candidate_factory=MatchingEngine,
+    )
+
+    assert len(results) == len(execution_equivalence_cases())
+    assert all(result.equivalent for result in results)
+
+
+def test_execution_equivalence_suite_reports_failing_case_name() -> None:
+    with pytest.raises(AssertionError, match="queue-ahead-passive-fill"):
+        assert_execution_equivalence_suite(
+            instrument=gc_spec(),
+            candidate_factory=NoFillEngine,
+            cases=execution_equivalence_cases()[1:],
+        )

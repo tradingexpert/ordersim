@@ -203,6 +203,10 @@ For execution-engine work, `SyntheticSource.execution_equivalence_mbo()` gives
 contributors a tiny public queue-priority fixture to use with the equivalence
 harness.
 
+Compiled or alternative execution engines should pass
+`ordersim.testing.assert_execution_equivalence_suite(...)` before they are
+trusted.
+
 ## Contributing
 
 The easiest first contribution is a data connector.
