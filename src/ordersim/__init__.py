@@ -2,6 +2,7 @@
 
 from ordersim.gateway import OrderGateway
 from ordersim.recording import RecordingGateway
+from ordersim.replay import Replay, ReplayGateway, ReplayResult
 from ordersim.sim import MatchingEngine, PriceLevel
 from ordersim.specs import InstrumentSpec
 from ordersim.types import (
@@ -30,6 +31,9 @@ __all__ = [
     "OrderResult",
     "Price",
     "PriceLevel",
+    "Replay",
+    "ReplayGateway",
+    "ReplayResult",
     "RecordingGateway",
     "Side",
     "TimeInForce",

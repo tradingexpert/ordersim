@@ -95,6 +95,7 @@ from ordersim.specs import InstrumentSpec
 
 
 def strategy(gateway):
+    gateway.advance_to(1_000_000_100)
     bid, ask = gateway.book_top()
 
     result = gateway.place_limit(
@@ -135,6 +136,9 @@ The important output is not just final PnL. The important output is the event
 log showing what the strategy tried to do and what the simulated venue did in
 response.
 
+Strategies advance replay time explicitly with `gateway.advance_to(...)`; the
+library supplies execution semantics, not a strategy framework.
+
 ## Multi-Strategy Replay
 
 `ordersim` can run several strategy variants over the same market replay while
@@ -172,7 +176,7 @@ Planned release sequence:
 - Schema reference: `docs/schema.md`
 - AI agent guide: `AGENTS.md`
 
-API and extension recipe docs will land with the replay package skeleton.
+Connector extension recipe docs will land with the connector protocol.
 
 ## Contributing
 
