@@ -32,6 +32,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/types.py` | Public dataclasses and type aliases | Yes |
 | `ordersim/fixtures/` | Tiny public fixtures for examples and tests | Public |
 | `ordersim/connectors/` | Data source contracts | Yes |
+| `ordersim/latency.py` | Latency model contracts and reference models | Yes |
 | `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Yes |
 | `ordersim/replay/factory.py` | Builds feed, venue, OMS, portfolio | Planned internal |
 | `ordersim/sim/execution.py` | Execution engine protocol | Yes |

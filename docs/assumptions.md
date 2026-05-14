@@ -70,11 +70,13 @@ Latency is modeled in two legs:
 - entry latency: local order send to simulated venue receipt;
 - response latency: simulated venue event to local strategy observation.
 
-Models may be constant, jittered, empirical playback, empirical bootstrap, or
-parametric. Random models must be seedable.
+Current public models include constant latency and seeded uniform jitter.
+Planned models include empirical playback, empirical bootstrap, and parametric
+sampling. Random models must be seedable.
 
 Different strategies in the same replay may use different latency models. This
-is useful for A/B tests and for studying execution sensitivity.
+is useful for A/B tests and for studying execution sensitivity once the
+latency-aware venue layer is added.
 
 ## On Replay Accuracy For Latency
 
