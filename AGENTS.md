@@ -32,6 +32,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/types.py` | Public dataclasses and type aliases | Yes |
 | `ordersim/fixtures/` | Tiny public fixtures for examples and tests | Public |
 | `ordersim/connectors/` | Data source contracts | Yes |
+| `ordersim/connectors/csv.py` | Normalized CSV `MBOEvent` source | Yes |
 | `ordersim/latency.py` | Latency model contracts and reference models | Yes |
 | `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Yes |
 | `ordersim/replay/factory.py` | Builds feed, venue, OMS, portfolio | Planned internal |
@@ -78,6 +79,9 @@ gateway or whether the strategy should own that state itself.
 4. Add a replay test that proves at least one limit order can rest, fill, and
    cancel correctly.
 5. Document source-specific assumptions in `docs/schema.md`.
+
+Use `CsvSource` for normalized CSV examples. Add a new connector only when the
+source has its own schema, SDK, timestamp semantics, or lossy conversion rules.
 
 Do not make optional vendor SDKs core dependencies. Put them behind extras such
 as `ordersim[databento]`.

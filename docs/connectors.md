@@ -41,3 +41,29 @@ replay = Replay(data=source, instrument=spec)
 
 `InMemorySource` is not a vendor connector. It is the smallest useful
 implementation of the `DataSource` contract.
+
+## Normalized CSV Sources
+
+Use `CsvSource` when you already have rows in the canonical `MBOEvent` schema:
+
+```python
+from ordersim import CsvSource, Replay
+
+source = CsvSource("events.csv")
+replay = Replay(data=source, instrument=spec)
+```
+
+The required CSV columns are:
+
+```text
+ts_ns,action,side,price,size,order_id
+```
+
+Extra columns are ignored. Prices are parsed as `Decimal`; timestamps, sizes,
+and order ids are parsed as integers. The CSV source is intentionally strict
+because it is a reviewable interchange format for examples, fixtures, and
+simple user data.
+
+`CsvSource` is not a vendor adapter. A Databento, LOBSTER, or exchange-specific
+connector should convert its source schema into this canonical shape and
+document any lossy conversion.

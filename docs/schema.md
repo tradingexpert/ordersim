@@ -54,3 +54,14 @@ A `DataSource` is any object with an `events()` method that yields normalized
 
 Connector-specific input schemas belong in connector documentation. The replay
 boundary should remain the normalized `MBOEvent` schema above.
+
+## Normalized CSV Schema
+
+`CsvSource` reads a headered CSV with the public `MBOEvent` fields:
+
+```text
+ts_ns,action,side,price,size,order_id
+```
+
+Extra columns are ignored. Field meanings and units are the same as `MBOEvent`.
+This is a normalized interchange schema, not a vendor-specific raw-data schema.

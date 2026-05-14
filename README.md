@@ -78,6 +78,14 @@ Optional vendor connectors will be installed separately as extras:
 pip install "ordersim[databento]"
 ```
 
+Normalized CSV input works without optional dependencies:
+
+```python
+from ordersim import CsvSource
+
+source = CsvSource("events.csv")
+```
+
 ## A Tiny Example
 
 This example uses synthetic fixture data shipped with the package, so it does
@@ -201,6 +209,9 @@ Good connector PRs:
 - include a tiny fixture or generator;
 - document timestamp, price, size, and order-id semantics;
 - add at least one replay test.
+
+For simple examples, prefer the canonical `CsvSource` schema before adding a
+new vendor-specific connector.
 
 ## License
 
