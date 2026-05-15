@@ -266,6 +266,7 @@ Planned release sequence:
 - Architecture: `docs/architecture.md`
 - Data guide: `docs/data-guide.md`
 - Connectors: `docs/connectors.md`
+- Releasing: `docs/releasing.md`
 - Engineering standards: `docs/engineering-standards.md`
 - Example: `examples/canonical.py`
 - Schema reference: `docs/schema.md`
