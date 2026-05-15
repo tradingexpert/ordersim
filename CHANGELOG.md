@@ -2,6 +2,14 @@
 
 All notable public changes to `ordersim` are documented here.
 
+## 0.1.2 - 2026-05-15
+
+- Added a visual latency demo showing the same strategy taking different fill
+  paths under different entry latency.
+- Sharpened the README first screen around the path from order intent to fill.
+- Updated GitHub Actions to current Node 24-era action releases and removed
+  duplicate release-time wheel builds.
+
 ## 0.1.1 - 2026-05-15
 
 - Updated the public install text after the first PyPI release.
