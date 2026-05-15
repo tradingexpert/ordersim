@@ -36,6 +36,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/connectors/` | Data source contracts | Yes |
 | `ordersim/connectors/csv.py` | Normalized CSV `MBOEvent` source | Yes |
 | `ordersim/connectors/databento.py` | Databento MBO normalization | Yes |
+| `ordersim/connectors/parquet.py` | Normalized Parquet `MBOEvent` source | Yes |
 | `ordersim/latency.py` | Latency model contracts and reference models | Yes |
 | `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Yes |
 | `ordersim/testing/` | Public helpers for extension tests | Public |

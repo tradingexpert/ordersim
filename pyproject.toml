@@ -37,6 +37,7 @@ databento = [
   "databento",
 ]
 dev = [
+  "pyarrow>=23",
   "pybind11>=3",
   "pytest>=8",
   "pytest-cov>=6",
@@ -46,6 +47,9 @@ dev = [
 fast = [
   "pybind11>=3",
   "setuptools>=68",
+]
+parquet = [
+  "pyarrow>=23",
 ]
 
 [project.urls]
