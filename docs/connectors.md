@@ -78,6 +78,38 @@ nanoseconds. It does not parse local datetime strings or infer timezone rules.
 connector should convert its source schema into this canonical shape and
 document any lossy conversion.
 
+## Normalized Parquet Sources
+
+Use `ParquetSource` when you already have rows in the canonical `MBOEvent`
+schema and want a columnar source for larger local datasets:
+
+```python
+from ordersim import ParquetSource, Replay
+
+source = ParquetSource("events.parquet")
+replay = Replay(data=source, instrument=spec)
+```
+
+Install the optional Parquet dependency when you need this reader:
+
+```bash
+pip install "ordersim[parquet]"
+```
+
+The required Parquet columns are the same canonical fields as CSV:
+
+```text
+ts_ns,action,side,price,size,order_id
+```
+
+`ParquetSource` expects `ts_ns` to already be normalized UTC Unix-epoch
+nanoseconds. Prices should be stored as strings or exact decimal-compatible
+values when possible; the reader converts them into public `Decimal` prices.
+Extra columns are ignored.
+
+`CsvSource` and `ParquetSource` intentionally share the same strict canonical
+row parser so identical event rows normalize the same way in both formats.
+
 ## Databento MBO Sources
 
 Use `DatabentoMboSource` with raw Databento MBO records, such as records yielded

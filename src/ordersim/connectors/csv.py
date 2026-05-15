@@ -3,15 +3,11 @@
 import csv
 from collections.abc import Iterable
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import TextIO, cast
+from typing import TextIO
 
-from ordersim.types import BookSide, MBOAction, MBOEvent
-
-REQUIRED_COLUMNS = ("ts_ns", "action", "side", "price", "size", "order_id")
-VALID_ACTIONS: set[MBOAction] = {"add", "cancel", "modify", "trade"}
-VALID_SIDES: set[BookSide] = {"bid", "ask"}
+from ordersim.connectors._canonical import row_to_event, validate_columns
+from ordersim.types import MBOEvent
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,43 +31,6 @@ class CsvSource:
 
 def _read_events(file: TextIO) -> Iterable[MBOEvent]:
     reader = csv.DictReader(file)
-    _validate_columns(reader.fieldnames)
+    validate_columns(reader.fieldnames, source_name="CSV")
     for row_number, row in enumerate(reader, start=2):
-        yield _row_to_event(row, row_number=row_number)
-
-
-def _validate_columns(fieldnames: list[str] | None) -> None:
-    if fieldnames is None:
-        raise ValueError("CSV source must include a header row")
-
-    missing = [column for column in REQUIRED_COLUMNS if column not in fieldnames]
-    if missing:
-        raise ValueError(f"CSV source is missing required columns: {missing}")
-
-
-def _row_to_event(row: dict[str, str], *, row_number: int) -> MBOEvent:
-    try:
-        action = _parse_action(row["action"])
-        side = _parse_side(row["side"])
-        return MBOEvent(
-            ts_ns=int(row["ts_ns"]),
-            action=action,
-            side=side,
-            price=Decimal(row["price"]),
-            size=int(row["size"]),
-            order_id=int(row["order_id"]),
-        )
-    except (InvalidOperation, KeyError, TypeError, ValueError) as exc:
-        raise ValueError(f"invalid CSV MBO row at line {row_number}") from exc
-
-
-def _parse_action(value: str) -> MBOAction:
-    if value not in VALID_ACTIONS:
-        raise ValueError(f"unknown action: {value!r}")
-    return cast(MBOAction, value)
-
-
-def _parse_side(value: str) -> BookSide:
-    if value not in VALID_SIDES:
-        raise ValueError(f"unknown side: {value!r}")
-    return cast(BookSide, value)
+        yield row_to_event(row, row_label=f"line {row_number}", source_name="CSV")

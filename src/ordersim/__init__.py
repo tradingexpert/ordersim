@@ -6,6 +6,7 @@ from ordersim.connectors import (
     DataSource,
     EventInput,
     InMemorySource,
+    ParquetSource,
     normalize_events,
 )
 from ordersim.economics import (
@@ -84,6 +85,7 @@ __all__ = [
     "OrderGateway",
     "OrderId",
     "OrderResult",
+    "ParquetSource",
     "PositionLot",
     "Price",
     "PriceLevel",

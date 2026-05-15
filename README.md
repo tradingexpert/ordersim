@@ -124,6 +124,14 @@ from ordersim import CsvSource
 source = CsvSource("events.csv")
 ```
 
+For larger already-normalized datasets, use Parquet:
+
+```python
+from ordersim import ParquetSource
+
+source = ParquetSource("events.parquet")
+```
+
 Raw Databento MBO records can be normalized directly too:
 
 ```python
