@@ -263,6 +263,7 @@ Planned release sequence:
 - Execution economics: `docs/economics.md`
 - Execution engines: `docs/execution-engines.md`
 - Latency models: `docs/latency.md`
+- Data guide: `docs/data-guide.md`
 - Connectors: `docs/connectors.md`
 - Engineering standards: `docs/engineering-standards.md`
 - Example: `examples/canonical.py`

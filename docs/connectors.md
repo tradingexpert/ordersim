@@ -63,6 +63,8 @@ Direct connector replay remains useful for smoke tests, one-off inspection, and
 connector development. CSV remains useful for tiny examples and reviewable
 fixtures.
 
+For the user-facing decision guide, see `docs/data-guide.md`.
+
 ## In-Memory Sources
 
 Use `InMemorySource` for tests, examples, and tiny fixtures:
