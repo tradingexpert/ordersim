@@ -18,10 +18,9 @@ CI to pass before merge.
 
 Use branch names that describe the type of change:
 
-- `feature/...` for new behavior, docs, examples, or package structure;
-- `fix/...` for bug fixes;
-- `docs/...` only when the branch is purely documentation and does not affect
-  package behavior.
+- `feature/...` for new behavior, docs, examples, refactors, or package
+  structure;
+- `fix/...` for bug fixes.
 
 Keep pull requests small enough to review in one sitting. A good PR usually has
 one purpose, a short description, tests, and clear notes about any assumptions
@@ -35,11 +34,10 @@ python -m ruff check .
 python -m pytest
 ```
 
-To exercise the optional C++ engine locally:
+To exercise the C++ engine locally:
 
 ```bash
-python -m pip install -e ".[fast]"
-python setup_cpp.py build_ext --inplace
+python -m pip install -e ".[dev]"
 python -m pytest tests/test_cpp_execution_engine.py
 ```
 
