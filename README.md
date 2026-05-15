@@ -100,8 +100,7 @@ equivalence fixtures as the Python engine.
 
 ## Install
 
-`ordersim` is in early public setup and is not published to PyPI yet. The
-planned install path for the first release is:
+Install the current release from PyPI with:
 
 ```bash
 pip install ordersim
