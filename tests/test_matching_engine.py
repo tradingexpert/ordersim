@@ -3,7 +3,7 @@ from typing import cast
 
 import pytest
 
-from ordersim import MatchingEngine, MBOEvent
+from ordersim import MatchingEngine, MBOEvent, RestingOrder
 from ordersim.sim.matching_engine import PriceLevel
 from ordersim.types import Fill
 
@@ -34,8 +34,14 @@ def test_limit_order_joins_back_of_visible_queue() -> None:
 
     assert result.order_id is not None
     assert result.fills == ()
-    assert engine.own_orders_snapshot() == (
-        (result.order_id, "bid", Decimal("100.0"), 2, 5),
+    assert engine.own_orders() == (
+        RestingOrder(
+            order_id=result.order_id,
+            side="buy",
+            price=Decimal("100.0"),
+            remaining_size=2,
+            queue_ahead_size=5,
+        ),
     )
     assert engine.book_top() == (Decimal("100.0"), None)
     assert engine.book_depth(1)[0] == (PriceLevel(Decimal("100.0"), 7),)
@@ -49,8 +55,14 @@ def test_public_cancel_reduces_queue_ahead_without_filling_own_order() -> None:
     fills = engine.apply_event(event(2, "cancel", "bid", "100.0", 3, 1))
 
     assert fills == []
-    assert engine.own_orders_snapshot() == (
-        (result.order_id, "bid", Decimal("100.0"), 2, 2),
+    assert engine.own_orders() == (
+        RestingOrder(
+            order_id=result.order_id,
+            side="buy",
+            price=Decimal("100.0"),
+            remaining_size=2,
+            queue_ahead_size=2,
+        ),
     )
     assert engine.book_depth(1)[0] == (PriceLevel(Decimal("100.0"), 4),)
 
@@ -91,8 +103,14 @@ def test_public_trade_consumes_queue_ahead_then_passively_fills_own_order() -> N
         )
     ]
     assert engine.position() == 2
-    assert engine.own_orders_snapshot() == (
-        (result.order_id, "bid", Decimal("100.0"), 2, 0),
+    assert engine.own_orders() == (
+        RestingOrder(
+            order_id=result.order_id,
+            side="buy",
+            price=Decimal("100.0"),
+            remaining_size=2,
+            queue_ahead_size=0,
+        ),
     )
     assert engine.pop_passive_fills() == second_fills
     assert engine.pop_passive_fills() == []
@@ -122,7 +140,7 @@ def test_multiple_own_orders_advance_fifo_at_same_price() -> None:
             ts_ns=2,
         ),
     ]
-    assert engine.own_orders_snapshot() == ()
+    assert engine.own_orders() == ()
     assert engine.position() == 5
 
 
@@ -143,7 +161,7 @@ def test_ask_side_passive_fill_decreases_position_and_removes_filled_order() -> 
         )
     ]
     assert engine.position() == -3
-    assert engine.own_orders_snapshot() == ()
+    assert engine.own_orders() == ()
     assert engine.book_top() == (None, None)
 
 
@@ -226,7 +244,7 @@ def test_ioc_limit_does_not_rest_remainder() -> None:
         ("buy", Decimal("101.0"), 1),
     ]
     assert result.order_id is None
-    assert engine.own_orders_snapshot() == ()
+    assert engine.own_orders() == ()
 
 
 def test_cancel_removes_own_order_from_book() -> None:
@@ -237,7 +255,7 @@ def test_cancel_removes_own_order_from_book() -> None:
     assert engine.cancel(result.order_id) is True
     assert engine.cancel(result.order_id) is False
     assert engine.book_top() == (None, None)
-    assert engine.own_orders_snapshot() == ()
+    assert engine.own_orders() == ()
 
 
 def test_engine_reports_event_time_and_rejects_invalid_orders() -> None:

@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Any
 
-from ordersim import Fill, OrderEvent, OrderResult, RecordingGateway
+from ordersim import Fill, OrderEvent, OrderResult, RecordingGateway, RestingOrder
 from ordersim.types import OrderId, Price, Side, TimeInForce
 
 
@@ -65,6 +65,17 @@ class FakeGateway:
 
     def position(self) -> int:
         return 0
+
+    def own_orders(self) -> tuple[RestingOrder, ...]:
+        return (
+            RestingOrder(
+                order_id=42,
+                side="buy",
+                price=Decimal("100.0"),
+                remaining_size=2,
+                queue_ahead_size=3,
+            ),
+        )
 
     def now_ns(self) -> int:
         return self.now
@@ -188,6 +199,15 @@ def test_recording_gateway_forwards_read_only_methods_and_helpers() -> None:
     assert gateway.book_top() == (Decimal("100.0"), Decimal("101.0"))
     assert gateway.book_depth(3) == {"levels": 3}
     assert gateway.position() == 0
+    assert gateway.own_orders() == (
+        RestingOrder(
+            order_id=42,
+            side="buy",
+            price=Decimal("100.0"),
+            remaining_size=2,
+            queue_ahead_size=3,
+        ),
+    )
     assert gateway.now_ns() == 1_000
     assert gateway.private_helper() == "forwarded"
     assert events == []

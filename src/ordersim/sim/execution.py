@@ -13,6 +13,7 @@ from ordersim.types import (
     OrderId,
     OrderResult,
     Price,
+    RestingOrder,
     Side,
     TimeInForce,
 )
@@ -55,6 +56,9 @@ class ExecutionEngine(Protocol):
 
     def position(self) -> int:
         """Return current signed position."""
+
+    def own_orders(self) -> tuple[RestingOrder, ...]:
+        """Return own resting orders with current queue-ahead quantity."""
 
 
 ExecutionEngineFactory = Callable[[], ExecutionEngine]

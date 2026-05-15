@@ -16,6 +16,7 @@ from ordersim.types import (
     OrderId,
     OrderResult,
     Price,
+    RestingOrder,
     Side,
     TimeInForce,
 )
@@ -165,6 +166,9 @@ class RecordingGateway:
 
     def position(self) -> int:
         return self._inner.position()
+
+    def own_orders(self) -> tuple[RestingOrder, ...]:
+        return self._inner.own_orders()
 
     def now_ns(self) -> int:
         return self._inner.now_ns()

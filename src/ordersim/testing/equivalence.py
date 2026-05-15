@@ -29,6 +29,7 @@ class ExecutionEquivalenceResult:
         return (
             self.reference.fills == self.candidate.fills
             and self.reference.final_position == self.candidate.final_position
+            and self.reference.resting_orders == self.candidate.resting_orders
             and self.reference.execution_summary == self.candidate.execution_summary
             and self.reference.equity_curve == self.candidate.equity_curve
             and self.reference.order_events == self.candidate.order_events
@@ -175,6 +176,12 @@ def _format_difference(result: ExecutionEquivalenceResult) -> str:
             "final positions differ: "
             f"reference={result.reference.final_position!r} "
             f"candidate={result.candidate.final_position!r}"
+        )
+    if result.reference.resting_orders != result.candidate.resting_orders:
+        differences.append(
+            "resting orders differ: "
+            f"reference={result.reference.resting_orders!r} "
+            f"candidate={result.candidate.resting_orders!r}"
         )
     if result.reference.order_events != result.candidate.order_events:
         differences.append(

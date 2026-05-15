@@ -11,7 +11,7 @@ from ordersim.testing import (
     compare_execution_engines,
     execution_equivalence_cases,
 )
-from ordersim.types import Fill, OrderResult
+from ordersim.types import Fill, OrderResult, RestingOrder
 
 
 class ScriptedEngine:
@@ -62,6 +62,9 @@ class ScriptedEngine:
     def position(self) -> int:
         return self.signed_position
 
+    def own_orders(self) -> tuple[RestingOrder, ...]:
+        return ()
+
 
 class NoFillEngine:
     def apply_event(self, event: MBOEvent) -> list[Fill]:
@@ -93,6 +96,22 @@ class NoFillEngine:
 
     def position(self) -> int:
         return 0
+
+    def own_orders(self) -> tuple[RestingOrder, ...]:
+        return ()
+
+
+class UnexpectedRestingOrderEngine(NoFillEngine):
+    def own_orders(self) -> tuple[RestingOrder, ...]:
+        return (
+            RestingOrder(
+                order_id=99,
+                side="buy",
+                price=Decimal("100.0"),
+                remaining_size=1,
+                queue_ahead_size=0,
+            ),
+        )
 
 
 def gc_spec() -> InstrumentSpec:
@@ -244,9 +263,23 @@ def test_assert_equivalent_execution_engines_reports_differences() -> None:
     message = str(exc_info.value)
     assert "fills differ" in message
     assert "final positions differ" in message
+    assert "resting orders differ" not in message
     assert "order events differ" in message
     assert "execution summaries differ" in message
     assert "equity curves differ" in message
+
+
+def test_equivalence_assertion_reports_resting_order_differences() -> None:
+    def strategy(gateway) -> None:
+        gateway.advance_to(1)
+
+    with pytest.raises(AssertionError, match="resting orders differ"):
+        assert_equivalent_execution_engines(
+            data=tiny_events(),
+            instrument=gc_spec(),
+            strategy=strategy,
+            candidate_factory=UnexpectedRestingOrderEngine,
+        )
 
 
 def test_equivalence_harness_uses_public_queue_fixture() -> None:

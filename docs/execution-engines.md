@@ -29,6 +29,7 @@ A compiled execution engine may be added for scale, but it must implement the
 - same strategy order intents;
 - same fills;
 - same final position;
+- same own resting orders;
 - same execution summary;
 - same equity curve;
 - same order-intent log where replay exposes it.
@@ -88,6 +89,7 @@ reference engine and the candidate engine. It compares:
 
 - fills;
 - final position;
+- own resting orders;
 - execution summary;
 - equity curve;
 - order-intent log.

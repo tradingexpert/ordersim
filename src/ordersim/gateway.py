@@ -7,7 +7,15 @@ inspect position, and advance replay time.
 
 from typing import Any, Protocol
 
-from ordersim.types import Fill, OrderId, OrderResult, Price, Side, TimeInForce
+from ordersim.types import (
+    Fill,
+    OrderId,
+    OrderResult,
+    Price,
+    RestingOrder,
+    Side,
+    TimeInForce,
+)
 
 
 class OrderGateway(Protocol):
@@ -52,6 +60,9 @@ class OrderGateway(Protocol):
 
     def position(self) -> int:
         """Return current signed position for the gateway's instrument."""
+
+    def own_orders(self) -> tuple[RestingOrder, ...]:
+        """Return own resting orders with current queue-ahead quantity."""
 
     def now_ns(self) -> int:
         """Return current replay time in integer nanoseconds."""

@@ -40,6 +40,9 @@ Public trades and public cancels then consume queue ahead according to the
 matching model. When queue ahead reaches zero, subsequent eligible volume can
 fill the strategy order.
 
+Own resting orders are inspectable during replay through `gateway.own_orders()`.
+Each row reports remaining size and the current visible queue-ahead quantity.
+
 The reference Python matching engine keeps an explicit FIFO for each
 `(side, price)` level. Public MBO add events and strategy orders append to that
 FIFO. Public cancels remove or reduce the referenced public order. Public trades
