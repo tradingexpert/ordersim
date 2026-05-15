@@ -27,19 +27,22 @@ token:
 3. publish only from a tagged release workflow with `id-token: write`;
 4. use GitHub release notes as the human-facing release summary.
 
-The release workflow should be added when `v0.1.0` is ready to publish, not
-before. Until then, package validation belongs in normal CI and publishing
-credentials do not belong in the repository.
+The tagged `Release` workflow performs the publish step. Package validation
+still belongs in normal CI; publishing credentials do not belong in the
+repository.
 
 ## Versioning Direction
 
-The current package version is `0.0.0` because the public API is still being
-prepared. Move to `0.1.0` only when:
+The first public version is `0.1.0`. It is appropriate once:
 
 - installation instructions are final for the release;
 - the preferred execution-engine story is settled;
 - one canonical example runs from a clean install;
 - the first release notes can say what a user can actually do.
+
+Tag releases as `vX.Y.Z` so the tagged `Release` workflow builds the source
+distribution, builds native wheels for every supported platform, and publishes
+the combined artifacts through the configured PyPI Trusted Publisher.
 
 ## Native Wheels
 

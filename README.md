@@ -248,8 +248,8 @@ Planned release sequence:
 
 - `v0.1`: Python reference engine, packaged C++ default, and
   a canonical connector -> Parquet -> replay workflow.
-- `v0.2`: package the compiled execution engine for easier distribution, with
-  Python equivalence fixtures required before release.
+- `v0.2`: broaden connector recipes, latency experiments, and notebook-first
+  research ergonomics while keeping the C++ and Python engines equivalent.
 - `v1.0`: research-grade execution lab with notebook-first workflows,
   connector recipes, latency model gallery, and public replay-equivalence
   harness.
