@@ -32,9 +32,10 @@ plain and inspectable. Public behavior should be judged against it.
 ## Default Selection
 
 `Replay(...)` prefers `CppMatchingEngine` when the compiled extension is
-available. It does so because compiled replay is the normal useful default once
-behavioral equivalence has been proven: users get the same fills and order log
-without paying Python-loop cost on every run.
+available. Packaged wheels are expected to include that extension. Compiled
+replay is the normal useful default once behavioral equivalence has been proven:
+users get the same fills and order log without paying Python-loop cost on every
+run.
 
 If the extension is unavailable, `Replay(...)` falls back to `MatchingEngine`.
 Pass `execution_engine_factory=MatchingEngine` when the Python version is the
@@ -81,15 +82,14 @@ strategy has isolated order state while sharing the same immutable event stream.
 stores integer ticks; the Python wrapper accepts an explicit `tick_size` so the
 public API remains exact-`Decimal`.
 
-Build the extension in a source checkout:
+Install a source checkout normally to build the extension:
 
 ```bash
-python -m pip install -e ".[fast]"
-python setup_cpp.py build_ext --inplace
+python -m pip install -e ".[dev]"
 ```
 
-`Replay(...)` uses it automatically after it is built. You can also select it
-explicitly through the normal replay boundary:
+`Replay(...)` uses it automatically when it is importable. You can also select
+it explicitly through the normal replay boundary:
 
 ```python
 from ordersim import CppMatchingEngine, Replay
@@ -103,10 +103,9 @@ replay = Replay(
 )
 ```
 
-`CppMatchingEngine` is optional at install time. Pure-Python installs remain
-valid, and
 `cpp_execution_engine_available()` reports whether the compiled extension is
-currently importable.
+currently importable. The Python engine remains a valid fallback for source
+installs where the extension was not built or is intentionally omitted.
 
 The repository also runs native C++ core tests in CI. Those tests catch
 low-level engine regressions before Python enters the picture; the replay

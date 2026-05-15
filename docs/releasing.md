@@ -41,18 +41,15 @@ prepared. Move to `0.1.0` only when:
 - one canonical example runs from a clean install;
 - the first release notes can say what a user can actually do.
 
-## Open Packaging Decision
+## Native Wheels
 
-The remaining release-shaping decision is how the C++ engine ships:
+`v0.1.0` ships the C++ engine in normal wheels. That matches the public engine
+story: compiled replay is the ordinary default, while the Python engine is the
+readable reference.
 
-- **pure-Python first release**: easiest install path, with the C++ engine still
-  source-built from the repo;
-- **native wheels in the first release**: stronger default-engine story, but it
-  requires reliable wheel builds across supported platforms before publishing.
+The normal package build now produces a platform wheel containing
+`ordersim._matching_engine_cpp`. Before release, CI must build and test wheels
+for every supported platform/Python pair that the project claims.
 
-The current package job validates the pure-Python wheel that the present build
-configuration emits. If the project chooses native wheels for `v0.1.0`, the
-build system and CI matrix need to change before release.
-
-The project should choose one path explicitly before `v0.1.0`. The README should
-not promise more than the published artifacts provide.
+Source installs still need a compiler. Published wheels should make that an edge
+case for ordinary users, not the default path.
