@@ -1,9 +1,8 @@
 """Recording wrapper for order-intent audit logs.
 
-`RecordingGateway` is adapted from the private OrderSim recording wrapper. The
-public version keeps the same core idea but removes project-specific legacy
-methods and private debug behavior: every side-effecting gateway call appends a
-flat, typed event row to a caller-supplied sink.
+Every side-effecting gateway call appends a flat, typed event row to a
+caller-supplied sink. The wrapper keeps strategy code pointed at the ordinary
+gateway surface while making the execution path inspectable after the run.
 """
 
 from collections.abc import MutableSequence

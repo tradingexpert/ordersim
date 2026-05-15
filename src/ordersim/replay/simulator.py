@@ -29,6 +29,7 @@ from ordersim.sim import (
 from ordersim.specs import InstrumentSpec
 from ordersim.types import (
     Fill,
+    MBOEvent,
     OrderEvent,
     OrderId,
     OrderResult,
@@ -62,9 +63,34 @@ class ReplayGateway:
         engine: ExecutionEngine | None = None,
         latency_model: LatencyModel | None = None,
     ) -> None:
-        self._data = tuple(
-            sorted(normalize_events(data), key=lambda event: event.ts_ns)
+        self._init(
+            tuple(sorted(normalize_events(data), key=lambda event: event.ts_ns)),
+            engine=engine,
+            latency_model=latency_model,
         )
+
+    @classmethod
+    def _from_canonical_events(
+        cls,
+        events: tuple[MBOEvent, ...],
+        *,
+        engine: ExecutionEngine,
+        latency_model: LatencyModel,
+    ) -> "ReplayGateway":
+        """Build a gateway from the immutable event tuple already held by Replay."""
+
+        gateway = cls.__new__(cls)
+        gateway._init(events, engine=engine, latency_model=latency_model)
+        return gateway
+
+    def _init(
+        self,
+        events: tuple[MBOEvent, ...],
+        *,
+        engine: ExecutionEngine | None,
+        latency_model: LatencyModel | None,
+    ) -> None:
+        self._events = events
         self._engine = engine or python_execution_engine_factory()
         self._latency_model = latency_model or default_latency_model_factory()
         self._cursor = 0
@@ -92,10 +118,10 @@ class ReplayGateway:
 
         fills: list[Fill] = []
         while (
-            self._cursor < len(self._data)
-            and self._data[self._cursor].ts_ns <= ts_ns
+            self._cursor < len(self._events)
+            and self._events[self._cursor].ts_ns <= ts_ns
         ):
-            event = self._data[self._cursor]
+            event = self._events[self._cursor]
             fills.extend(self._engine.apply_event(event))
             self._cursor += 1
             self._record_valuation_mark(event.ts_ns)
@@ -210,7 +236,7 @@ class Replay:
     ) -> ReplayResult:
         """Run one strategy and return fills plus its order-intent log."""
 
-        gateway = ReplayGateway(
+        gateway = ReplayGateway._from_canonical_events(
             self.data,
             engine=self._execution_engine_factory(),
             latency_model=self._latency_model_factory(),

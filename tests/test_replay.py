@@ -10,6 +10,7 @@ from ordersim import (
     MBOEvent,
     PriceLevel,
     Replay,
+    ReplayGateway,
     RestingOrder,
 )
 from ordersim.fixtures.synthetic import SyntheticSource
@@ -109,6 +110,14 @@ def test_replay_gateway_exposes_book_depth() -> None:
     assert result.fills == ()
     assert result.order_events == ()
     assert result.equity_curve[-1].equity == Decimal("0")
+
+
+def test_replay_gateway_constructor_accepts_event_input() -> None:
+    gateway = ReplayGateway(SyntheticSource.small_mbo())
+
+    gateway.advance_to(1_000_000_100)
+
+    assert gateway.book_top() == (Decimal("100.0"), Decimal("101.0"))
 
 
 def test_replay_exposes_own_resting_orders_with_queue_ahead() -> None:

@@ -37,7 +37,8 @@ The main boundaries are:
 
 - connectors normalize external data into `MBOEvent`;
 - strategies depend on `OrderGateway`, not on storage or engine internals;
-- replay chooses an execution engine and gathers results;
+- replay normalizes inputs once, chooses an execution engine, and gathers
+  results;
 - the Python engine defines behavior; the C++ engine must match it.
 
 ## Recommended Data Flow
@@ -134,11 +135,11 @@ flowchart LR
     replay --> c --> rc
 ```
 
-`run_many(...)` does not let strategies share mutable execution state. Each
-strategy receives its own gateway, engine, order log, fills, and portfolio
-summary while replaying the same immutable input events. The intended property
-is solo-equivalence: running a strategy inside `run_many(...)` should match
-running it alone on the same input.
+`run_many(...)` does not let strategies share mutable execution state. `Replay`
+first builds one immutable canonical event tuple; each strategy then receives
+its own gateway, engine, order log, fills, and portfolio summary while reading
+that same tuple. The intended property is solo-equivalence: running a strategy
+inside `run_many(...)` should match running it alone on the same input.
 
 ## Where To Extend
 
