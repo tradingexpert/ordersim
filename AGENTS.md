@@ -53,6 +53,8 @@ extraction targets and should not be imported until they exist.
 Start with `docs/data-guide.md` when deciding whether a workflow should replay
 directly from a connector or from canonical Parquet.
 
+Use `docs/architecture.md` when deciding which boundary a change belongs on.
+
 ## Public Gateway Contract
 
 Strategies should only rely on the gateway surface:
