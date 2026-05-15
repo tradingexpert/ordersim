@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=68", "pybind11>=3"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "ordersim"
@@ -46,10 +46,6 @@ dev = [
   "setuptools>=68",
   "twine>=6",
 ]
-fast = [
-  "pybind11>=3",
-  "setuptools>=68",
-]
 parquet = [
   "pyarrow>=23",
 ]
@@ -58,8 +54,14 @@ parquet = [
 Repository = "https://github.com/tradingexpert/ordersim"
 Issues = "https://github.com/tradingexpert/ordersim/issues"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/ordersim"]
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ordersim = ["py.typed"]
 
 [tool.ruff]
 line-length = 88

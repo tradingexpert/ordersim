@@ -71,19 +71,16 @@ The projects serve different workflows.
 ## Engine Design
 
 The pure Python engine is still the reference implementation, because it is the
-clearest place to inspect queue behavior and prove equivalence. For ordinary
-`Replay(...)` runs, `ordersim` prefers the compiled `CppMatchingEngine` when it
-is available, because it preserves the same public contract while avoiding the
-Python hot loop.
-
-Build the C++ engine from source:
+clearest place to inspect queue behavior and prove equivalence. Packaged wheels
+include the compiled `CppMatchingEngine`; ordinary `Replay(...)` runs prefer it
+because it preserves the same public contract while avoiding the Python hot
+loop. Source checkouts build the extension during normal installation:
 
 ```bash
-python -m pip install -e ".[fast]"
-python setup_cpp.py build_ext --inplace
+python -m pip install -e ".[dev]"
 ```
 
-If the extension is not built, `Replay(...)` falls back to the Python engine.
+If the extension is unavailable, `Replay(...)` falls back to the Python engine.
 Use the Python engine explicitly when you are debugging fill behavior, teaching
 the model, developing a new engine, or working in an environment where compiling
 extensions is not worth the friction:
@@ -249,7 +246,7 @@ same input.
 
 Planned release sequence:
 
-- `v0.1`: Python reference engine, source-built C++ default when available, and
+- `v0.1`: Python reference engine, packaged C++ default, and
   a canonical connector -> Parquet -> replay workflow.
 - `v0.2`: package the compiled execution engine for easier distribution, with
   Python equivalence fixtures required before release.

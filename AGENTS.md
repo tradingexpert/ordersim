@@ -154,8 +154,8 @@ for engine equivalence tests.
 Use `ordersim.testing.assert_execution_equivalence_suite` as the default smoke
 suite for alternative or compiled engines.
 
-For the optional C++ engine, build the extension with
-`python setup_cpp.py build_ext --inplace` before running its parity tests.
+Normal package builds include the C++ extension. In a source checkout,
+`python -m pip install -e ".[dev]"` builds it before parity tests run.
 `Replay(...)` prefers the C++ engine when that extension is importable; use
 `MatchingEngine` explicitly when you need the Python reference path.
 
