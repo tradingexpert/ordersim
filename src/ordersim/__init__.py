@@ -8,6 +8,7 @@ from ordersim.connectors import (
     InMemorySource,
     ParquetSource,
     normalize_events,
+    write_parquet,
 )
 from ordersim.economics import (
     EquityPoint,
@@ -104,4 +105,5 @@ __all__ = [
     "normalize_events",
     "python_execution_engine_factory",
     "summarize_fills",
+    "write_parquet",
 ]

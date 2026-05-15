@@ -110,10 +110,11 @@ planned install path for the first release is:
 pip install ordersim
 ```
 
-Optional vendor connectors will be installed separately as extras:
+Optional data integrations and file formats are installed separately as extras:
 
 ```bash
 pip install "ordersim[databento]"
+pip install "ordersim[parquet]"
 ```
 
 Normalized CSV input works without optional dependencies:
@@ -124,15 +125,23 @@ from ordersim import CsvSource
 source = CsvSource("events.csv")
 ```
 
-For larger already-normalized datasets, use Parquet:
+For repeated research runs, the recommended path is to normalize once,
+materialize the canonical Parquet form, and replay from that thereafter:
 
 ```python
-from ordersim import ParquetSource
+import databento as db
+
+from ordersim import DatabentoMboSource, ParquetSource, write_parquet
+
+store = db.DBNStore.from_file("GLBX.MDP3-ES-20260102.mbo.dbn.zst")
+raw_source = DatabentoMboSource(store)
+write_parquet(raw_source, "events.parquet")
 
 source = ParquetSource("events.parquet")
 ```
 
-Raw Databento MBO records can be normalized directly too:
+Direct raw-source replay is still useful for one-off inspection and connector
+development:
 
 ```python
 import databento as db
@@ -240,7 +249,8 @@ same input.
 
 Planned release sequence:
 
-- `v0.1`: Python reference engine plus source-built C++ default when available.
+- `v0.1`: Python reference engine, source-built C++ default when available, and
+  a canonical connector -> Parquet -> replay workflow.
 - `v0.2`: package the compiled execution engine for easier distribution, with
   Python equivalence fixtures required before release.
 - `v1.0`: research-grade execution lab with notebook-first workflows,

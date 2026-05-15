@@ -155,3 +155,15 @@ ts_ns,action,side,price,size,order_id
 
 Extra columns are ignored. Field meanings and units are the same as `MBOEvent`.
 This is a normalized interchange schema, not a vendor-specific raw-data schema.
+
+## Normalized Parquet Schema
+
+`ParquetSource` reads the same canonical fields as `CsvSource`:
+
+```text
+ts_ns,action,side,price,size,order_id
+```
+
+`write_parquet(...)` writes exactly this durable schema from any normalized
+event iterable or `DataSource`. For repeated research runs, prefer this
+canonical Parquet form after the initial vendor-normalization step.

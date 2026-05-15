@@ -18,6 +18,7 @@ from ordersim import (
     ParquetSource,
     Replay,
     normalize_events,
+    write_parquet,
 )
 from ordersim.connectors import parquet as parquet_connector
 from ordersim.fixtures.synthetic import SyntheticSource
@@ -91,7 +92,7 @@ def write_csv(path: Path, rows: list[str]) -> Path:
     return path
 
 
-def write_parquet(path: Path, rows: list[dict[str, object]]) -> Path:
+def write_raw_parquet(path: Path, rows: list[dict[str, object]]) -> Path:
     pq.write_table(pa.Table.from_pylist(rows), path)
     return path
 
@@ -196,7 +197,7 @@ def test_csv_source_reports_unknown_actions(tmp_path: Path) -> None:
 
 
 def test_parquet_source_reads_normalized_mbo_events(tmp_path: Path) -> None:
-    path = write_parquet(
+    path = write_raw_parquet(
         tmp_path / "events.parquet",
         [
             {
@@ -241,7 +242,7 @@ def test_parquet_source_reads_normalized_mbo_events(tmp_path: Path) -> None:
 
 
 def test_replay_accepts_parquet_source(tmp_path: Path) -> None:
-    path = write_parquet(
+    path = write_raw_parquet(
         tmp_path / "events.parquet",
         [
             {
@@ -266,8 +267,30 @@ def test_replay_accepts_parquet_source(tmp_path: Path) -> None:
     assert result.fills[0].price == Decimal("101.0")
 
 
+def test_write_parquet_materializes_canonical_events(tmp_path: Path) -> None:
+    events = SyntheticSource.small_mbo()
+    path = write_parquet(events, tmp_path / "events.parquet")
+
+    assert path == tmp_path / "events.parquet"
+    assert ParquetSource(path).events() == events
+
+
+def test_write_parquet_accepts_data_sources(tmp_path: Path) -> None:
+    source = InMemorySource.from_events("small-mbo", SyntheticSource.small_mbo())
+    path = write_parquet(source, tmp_path / "nested" / "events.parquet")
+
+    assert path.exists()
+    assert ParquetSource(path).events() == SyntheticSource.small_mbo()
+
+
+def test_write_parquet_materializes_empty_sources(tmp_path: Path) -> None:
+    path = write_parquet((), tmp_path / "empty.parquet")
+
+    assert ParquetSource(path).events() == ()
+
+
 def test_parquet_source_requires_canonical_columns(tmp_path: Path) -> None:
-    path = write_parquet(
+    path = write_raw_parquet(
         tmp_path / "events.parquet",
         [
             {
@@ -285,7 +308,7 @@ def test_parquet_source_requires_canonical_columns(tmp_path: Path) -> None:
 
 
 def test_parquet_source_reports_invalid_rows(tmp_path: Path) -> None:
-    path = write_parquet(
+    path = write_raw_parquet(
         tmp_path / "events.parquet",
         [
             {
@@ -315,6 +338,20 @@ def test_parquet_source_reports_missing_optional_dependency(monkeypatch) -> None
 
     with pytest.raises(ImportError, match=r"ordersim\[parquet\]"):
         parquet_connector._load_pyarrow_parquet()
+
+
+def test_write_parquet_reports_missing_optional_dependency(monkeypatch) -> None:
+    real_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "pyarrow":
+            raise ImportError("missing")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    with pytest.raises(ImportError, match=r"ordersim\[parquet\]"):
+        parquet_connector._load_pyarrow()
 
 
 def test_databento_source_normalizes_raw_mbo_records() -> None:

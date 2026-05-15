@@ -37,6 +37,32 @@ Every connector should include a tiny public fixture or generator and at least
 one deterministic replay test. The test should prove the connector can produce
 events that a strategy can replay without private data.
 
+## Recommended Workflow
+
+For repeated research, normalize raw vendor data once, materialize the canonical
+Parquet form, and replay from `ParquetSource` thereafter:
+
+```python
+import databento as db
+
+from ordersim import DatabentoMboSource, ParquetSource, Replay, write_parquet
+
+store = db.DBNStore.from_file("GLBX.MDP3-ES-20260102.mbo.dbn.zst")
+raw_source = DatabentoMboSource(store)
+write_parquet(raw_source, "events.parquet")
+
+source = ParquetSource("events.parquet")
+replay = Replay(data=source, instrument=spec)
+```
+
+This is the preferred path for durable research datasets. It keeps raw vendor
+semantics at the ingestion boundary, gives repeated runs one canonical local
+format, and avoids re-normalizing the same source on every replay.
+
+Direct connector replay remains useful for smoke tests, one-off inspection, and
+connector development. CSV remains useful for tiny examples and reviewable
+fixtures.
+
 ## In-Memory Sources
 
 Use `InMemorySource` for tests, examples, and tiny fixtures:
@@ -109,6 +135,15 @@ Extra columns are ignored.
 
 `CsvSource` and `ParquetSource` intentionally share the same strict canonical
 row parser so identical event rows normalize the same way in both formats.
+
+Use `write_parquet(...)` to materialize any normalized iterable or `DataSource`
+into the canonical Parquet schema:
+
+```python
+from ordersim import write_parquet
+
+write_parquet(source, "events.parquet")
+```
 
 ## Databento MBO Sources
 
