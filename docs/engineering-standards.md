@@ -1,7 +1,8 @@
 # Engineering Standards
 
-`ordersim` should feel small, explicit, and inspectable. The code is allowed to
-be slower than a compiled HFT framework. It is not allowed to be mysterious.
+`ordersim` should feel small, explicit, and inspectable. A compiled default is
+welcome when it preserves the Python reference behavior. The code is not
+allowed to be mysterious.
 
 ## Design Principles
 
@@ -46,6 +47,8 @@ be slower than a compiled HFT framework. It is not allowed to be mysterious.
 ## Matching And Replay Rules
 
 - The Python matching engine is the reference implementation.
+- Default replay may prefer a compiled equivalent when one is available.
+- Compiled speed is acceptable only when replay-equivalence remains explicit.
 - Queue behavior must be tested with small, readable fixtures.
 - Passive fills must be observable.
 - Cancels must be observable.

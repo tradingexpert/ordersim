@@ -6,6 +6,17 @@ on:
     branches: [main]
 
 jobs:
+  native-cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build native C++ tests
+        run: |
+          mkdir -p build/cpp
+          c++ -std=c++17 -Wall -Wextra -pedantic -Icpp cpp/tests/matching_engine_core_test.cpp -o build/cpp/matching_engine_core_test
+      - name: Run native C++ tests
+        run: build/cpp/matching_engine_core_test
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -18,5 +29,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install package
         run: python -m pip install -e ".[dev]"
+      - name: Build optional C++ engine
+        run: python setup_cpp.py build_ext --inplace
       - name: Run tests with coverage
         run: python -m pytest

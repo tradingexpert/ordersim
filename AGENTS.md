@@ -1,8 +1,10 @@
 # Agent Guide
 
-`ordersim` is a Python execution simulator. Strategies call a small gateway
-API. The simulator replays order-book data and returns fills plus an audit log
-of order intent.
+`ordersim` is an execution simulator with a Python-facing API. `Replay(...)`
+prefers the C++ engine when it is importable, while the Python engine remains
+the readable reference model that other engines must match. Strategies call a
+small gateway API. The simulator replays order-book data and returns fills plus
+an audit log of order intent.
 
 The gateway is the public contract. Most other modules are implementation
 details.
@@ -38,6 +40,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/testing/` | Public helpers for extension tests | Public |
 | `ordersim/replay/factory.py` | Builds feed, venue, OMS, portfolio | Planned internal |
 | `ordersim/sim/execution.py` | Execution engine protocol | Yes |
+| `ordersim/sim/cpp_matching_engine.py` | Optional C++ engine wrapper | Yes |
 | `ordersim/sim/matching_engine.py` | MBO matching and queue tracking reference | Yes |
 | `ordersim/sim/feed.py` | Event replay cursor | Planned internal |
 | `ordersim/sim/venue.py` | Latency-aware venue simulation | Planned internal |
@@ -132,6 +135,11 @@ for engine equivalence tests.
 
 Use `ordersim.testing.assert_execution_equivalence_suite` as the default smoke
 suite for alternative or compiled engines.
+
+For the optional C++ engine, build the extension with
+`python setup_cpp.py build_ext --inplace` before running its parity tests.
+`Replay(...)` prefers the C++ engine when that extension is importable; use
+`MatchingEngine` explicitly when you need the Python reference path.
 
 ## Things Not To Do
 

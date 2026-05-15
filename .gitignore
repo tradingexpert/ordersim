@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+*.so
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
@@ -30,4 +31,3 @@ artifacts/
 .DS_Store
 .idea/
 .vscode/
-

@@ -2,9 +2,20 @@ from decimal import Decimal
 
 import pytest
 
-from ordersim import InstrumentSpec, MatchingEngine, MBOEvent, Replay
+from ordersim import (
+    CppMatchingEngine,
+    InstrumentSpec,
+    MatchingEngine,
+    MBOEvent,
+    Replay,
+    cpp_execution_engine_available,
+)
 from ordersim.fixtures.synthetic import SyntheticSource
-from ordersim.sim import ExecutionEngine, default_execution_engine_factory
+from ordersim.sim import (
+    ExecutionEngine,
+    default_execution_engine_factory,
+    python_execution_engine_factory,
+)
 from ordersim.testing import (
     assert_equivalent_execution_engines,
     assert_execution_equivalence_suite,
@@ -135,10 +146,31 @@ def tiny_events() -> tuple[MBOEvent, ...]:
     )
 
 
-def test_default_execution_engine_factory_returns_reference_engine() -> None:
-    engine = default_execution_engine_factory()
+def test_python_execution_engine_factory_returns_reference_engine() -> None:
+    engine = python_execution_engine_factory()
 
     assert engine.book_top() == (None, None)
+
+
+def test_default_execution_engine_factory_prefers_cpp_when_available() -> None:
+    factory = default_execution_engine_factory(tick_size=Decimal("0.10"))
+    engine = factory()
+
+    if cpp_execution_engine_available():
+        assert isinstance(engine, CppMatchingEngine)
+    else:
+        assert isinstance(engine, MatchingEngine)
+
+
+def test_default_execution_engine_factory_falls_back_to_python(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "ordersim.sim.cpp_matching_engine.cpp_execution_engine_available",
+        lambda: False,
+    )
+
+    factory = default_execution_engine_factory(tick_size=Decimal("0.10"))
+
+    assert isinstance(factory(), MatchingEngine)
 
 
 def test_replay_accepts_execution_engine_factory() -> None:
