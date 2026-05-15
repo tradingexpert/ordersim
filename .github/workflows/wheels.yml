@@ -11,8 +11,6 @@ on:
       - "setup.py"
       - "src/ordersim/sim/**"
       - "tests/test_cpp_execution_engine.py"
-  push:
-    tags: ["v*"]
 
 jobs:
   build-wheels:
@@ -23,14 +21,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-15-intel, macos-14]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.0.0
+        uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_BUILD: "cp311-* cp312-*"
           CIBW_TEST_COMMAND: >-
             python -c "from ordersim import cpp_execution_engine_available; assert cpp_execution_engine_available()"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: wheels-${{ matrix.os }}
           path: wheelhouse/*.whl

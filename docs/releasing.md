@@ -54,7 +54,8 @@ The normal package build now produces a platform wheel containing
 `ordersim._matching_engine_cpp`. Before release, CI must build and test wheels
 for every supported platform/Python pair that the project claims.
 
-The `Wheels` workflow covers:
+The `Wheels` workflow validates the platform matrix on pull requests and manual
+runs:
 
 | Platform runner | Target |
 |---|---|
@@ -63,7 +64,8 @@ The `Wheels` workflow covers:
 | `macos-15-intel` | Intel macOS wheels |
 | `macos-14` | Apple Silicon macOS wheels |
 
-The release target is CPython `3.11` and `3.12` on those platforms.
+The tagged `Release` workflow repeats the same matrix before publishing. The
+release target is CPython `3.11` and `3.12` on those platforms.
 
 Source installs still need a compiler. Published wheels should make that an edge
 case for ordinary users, not the default path.
