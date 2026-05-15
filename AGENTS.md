@@ -93,6 +93,15 @@ source has its own schema, SDK, timestamp semantics, or lossy conversion rules.
 Do not make optional vendor SDKs core dependencies. Put them behind extras such
 as `ordersim[databento]`.
 
+For repeated research workflows, prefer:
+
+1. normalize vendor data with a connector;
+2. materialize it once with `write_parquet(...)`;
+3. replay repeated runs from `ParquetSource`.
+
+Direct connector replay is still useful for smoke tests, one-off inspection, and
+connector development.
+
 ### Add an Instrument Spec
 
 1. Add a plain `InstrumentSpec`.

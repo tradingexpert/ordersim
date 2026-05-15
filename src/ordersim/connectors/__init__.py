@@ -8,7 +8,7 @@ from ordersim.connectors.base import (
 )
 from ordersim.connectors.csv import CsvSource
 from ordersim.connectors.databento import DatabentoMboSource
-from ordersim.connectors.parquet import ParquetSource
+from ordersim.connectors.parquet import ParquetSource, write_parquet
 
 __all__ = [
     "CsvSource",
@@ -18,4 +18,5 @@ __all__ = [
     "InMemorySource",
     "ParquetSource",
     "normalize_events",
+    "write_parquet",
 ]
