@@ -38,6 +38,7 @@ class Fill:
 class MBOEvent:
     """One normalized market-by-order event.
 
+    `ts_ns` is an integer UTC Unix-epoch timestamp in nanoseconds.
     `side` is the resting book side affected by the event. For a trade, that
     means the side of the resting order that traded, not the aggressor side.
     """

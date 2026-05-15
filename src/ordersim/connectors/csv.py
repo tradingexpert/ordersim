@@ -20,7 +20,8 @@ class CsvSource:
 
     The expected columns are exactly the public `MBOEvent` fields:
     `ts_ns`, `action`, `side`, `price`, `size`, and `order_id`.
-    Extra columns are ignored.
+    `ts_ns` must already be normalized UTC Unix-epoch nanoseconds. Extra
+    columns are ignored.
     """
 
     path: str | Path

@@ -12,12 +12,19 @@ class DataSource(Protocol):
 A connector should hide SDK details, file layout, network access, and vendor
 column names. Replay code should receive only normalized `MBOEvent` rows.
 
+Normalized `ts_ns` values must be UTC Unix-epoch nanoseconds. Connectors may
+read exchange-local, vendor-local, or already-UTC source timestamps, but they
+must emit timezone-normalized UTC integers. If the source uses wall-clock local
+time, conversion must be timezone-aware and must handle daylight-saving
+transitions explicitly.
+
 ## Required Documentation
 
 Every connector should state:
 
 - source schema and vendor;
-- timestamp units and timezone;
+- source timestamp units and timezone;
+- how source timestamps are converted into UTC Unix-epoch nanoseconds;
 - whether timestamps are exchange-time or receive-time;
 - price units and size units;
 - order-id stability;
@@ -63,6 +70,9 @@ Extra columns are ignored. Prices are parsed as `Decimal`; timestamps, sizes,
 and order ids are parsed as integers. The CSV source is intentionally strict
 because it is a reviewable interchange format for examples, fixtures, and
 simple user data.
+
+`CsvSource` expects `ts_ns` to already be normalized UTC Unix-epoch
+nanoseconds. It does not parse local datetime strings or infer timezone rules.
 
 `CsvSource` is not a vendor adapter. A Databento, LOBSTER, or exchange-specific
 connector should convert its source schema into this canonical shape and

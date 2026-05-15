@@ -35,11 +35,11 @@ be slower than a compiled HFT framework. It is not allowed to be mysterious.
 
 ## Data Rules
 
-- All public timestamps are integer nanoseconds.
+- All public timestamps are UTC Unix-epoch integer nanoseconds.
 - All public sizes are integers.
 - Public prices should be exact: integer ticks or `Decimal`.
-- Data connectors must state units, timezone, timestamp source, and whether
-  events are exchange-time or receive-time.
+- Data connectors must state source units, source timezone, UTC-normalization
+  rules, timestamp source, and whether events are exchange-time or receive-time.
 - Examples must run without private data or paid data.
 - Large market-data files do not belong in the repo.
 
