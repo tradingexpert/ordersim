@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520"
+     role="img" aria-labelledby="title desc">
+  <title id="title">Same replay, same strategy, different entry latency</title>
+  <desc id="desc">Zero entry latency reaches the bid before the trade and fills passively at 100.0. Fifteen nanoseconds of entry latency arrives after the trade and later crosses the spread at 101.0.</desc>
+  <rect width="960" height="520" fill="#fbfbfa"/>
+  <text x="48" y="48" font-family="Arial, sans-serif" font-size="26" fill="#171717">Same replay. Same strategy. Different latency.</text>
+  <text x="48" y="78" font-family="Arial, sans-serif" font-size="16" fill="#4b5563">Entry latency changes the execution path before final PnL appears.</text>
+
+  <line x1="180" y1="150" x2="860" y2="150" stroke="#cbd5e1" stroke-width="2"/>
+  <line x1="180" y1="280" x2="860" y2="280" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="48" y="155" font-family="Arial, sans-serif" font-size="18" fill="#171717">0 ns</text>
+  <text x="48" y="285" font-family="Arial, sans-serif" font-size="18" fill="#171717">15 ns</text>
+
+  <text x="192" y="120" font-family="Arial, sans-serif" font-size="14" fill="#475569">t=101 quote</text>
+  <text x="332" y="120" font-family="Arial, sans-serif" font-size="14" fill="#475569">t=105 cancel</text>
+  <text x="470" y="120" font-family="Arial, sans-serif" font-size="14" fill="#475569">t=110 trade</text>
+  <text x="690" y="120" font-family="Arial, sans-serif" font-size="14" fill="#475569">fallback cross</text>
+
+  <circle cx="220" cy="150" r="9" fill="#2563eb"/>
+  <circle cx="360" cy="150" r="9" fill="#64748b"/>
+  <circle cx="500" cy="150" r="11" fill="#16a34a"/>
+  <text x="204" y="182" font-family="Arial, sans-serif" font-size="14" fill="#171717">joins queue</text>
+  <text x="334" y="182" font-family="Arial, sans-serif" font-size="14" fill="#171717">ahead shrinks</text>
+  <text x="465" y="182" font-family="Arial, sans-serif" font-size="14" fill="#171717">passive fill</text>
+
+  <circle cx="220" cy="280" r="9" fill="#2563eb"/>
+  <circle cx="360" cy="280" r="9" fill="#64748b"/>
+  <circle cx="500" cy="280" r="9" fill="#ef4444"/>
+  <circle cx="640" cy="280" r="9" fill="#2563eb"/>
+  <circle cx="780" cy="280" r="11" fill="#f59e0b"/>
+  <text x="196" y="312" font-family="Arial, sans-serif" font-size="14" fill="#171717">send</text>
+  <text x="334" y="312" font-family="Arial, sans-serif" font-size="14" fill="#171717">cancel</text>
+  <text x="476" y="312" font-family="Arial, sans-serif" font-size="14" fill="#171717">missed</text>
+  <text x="610" y="312" font-family="Arial, sans-serif" font-size="14" fill="#171717">arrives late</text>
+  <text x="748" y="312" font-family="Arial, sans-serif" font-size="14" fill="#171717">market fill</text>
+
+  <rect x="48" y="364" width="400" height="112" rx="8" fill="#ecfdf5"/>
+  <rect x="480" y="364" width="400" height="112" rx="8" fill="#fff7ed"/>
+  <text x="72" y="396" font-family="Arial, sans-serif" font-size="18" fill="#166534">0 ns entry latency</text>
+  <text x="504" y="396" font-family="Arial, sans-serif" font-size="18" fill="#9a3412">15 ns entry latency</text>
+  <text x="72" y="426" font-family="Arial, sans-serif" font-size="16" fill="#171717">queue ahead on arrival: 2</text>
+  <text x="504" y="426" font-family="Arial, sans-serif" font-size="16" fill="#171717">queue ahead on arrival: 0</text>
+  <text x="72" y="450" font-family="Arial, sans-serif" font-size="16" fill="#171717">fill_passive: 100.00</text>
+  <text x="504" y="450" font-family="Arial, sans-serif" font-size="16" fill="#171717">fill: 101.00</text>
+  <text x="72" y="474" font-family="Arial, sans-serif" font-size="16" fill="#171717">final equity: 42.50</text>
+  <text x="504" y="474" font-family="Arial, sans-serif" font-size="16" fill="#171717">final equity: -57.50</text>
+</svg>

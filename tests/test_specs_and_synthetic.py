@@ -117,6 +117,20 @@ def test_synthetic_source_execution_equivalence_mbo_documents_queue_case() -> No
     assert events[-1].size == 4
 
 
+def test_synthetic_source_latency_demo_documents_latency_case() -> None:
+    events = SyntheticSource.latency_demo_mbo()
+
+    assert events == SyntheticSource.latency_demo_mbo()
+    assert [event.action for event in events] == [
+        "add",
+        "add",
+        "cancel",
+        "trade",
+        "add",
+    ]
+    assert [event.ts_ns for event in events] == [100, 101, 105, 110, 120]
+
+
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [
