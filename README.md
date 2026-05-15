@@ -65,6 +65,20 @@ execution replay:
 
 The projects serve different workflows.
 
+## Optional C++ Engine
+
+The pure Python engine is still the reference implementation. An optional
+`CppMatchingEngine` can be built from source for compiled replay while keeping
+the same public execution contract:
+
+```bash
+python -m pip install -e ".[fast]"
+python setup_cpp.py build_ext --inplace
+```
+
+Future compiled-engine work is accepted only when it passes the same public
+equivalence fixtures as the Python engine.
+
 ## Install
 
 `ordersim` is in early public setup and is not published to PyPI yet. The
@@ -186,8 +200,8 @@ same input.
 Planned release sequence:
 
 - `v0.1`: pure Python, inspectable by default.
-- `v0.2`: optional compiled execution engine, required to pass Python
-  equivalence fixtures before release.
+- `v0.2`: package the optional compiled execution engine for distribution,
+  with Python equivalence fixtures required before release.
 - `v1.0`: research-grade execution lab with notebook-first workflows,
   connector recipes, latency model gallery, and public replay-equivalence
   harness.

@@ -35,6 +35,14 @@ python -m ruff check .
 python -m pytest
 ```
 
+To exercise the optional C++ engine locally:
+
+```bash
+python -m pip install -e ".[fast]"
+python setup_cpp.py build_ext --inplace
+python -m pytest tests/test_cpp_execution_engine.py
+```
+
 `pytest` includes coverage by default and currently enforces a minimum coverage
 threshold. If a change lowers coverage, add focused tests rather than lowering
 the threshold.

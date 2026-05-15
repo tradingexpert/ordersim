@@ -22,7 +22,7 @@ plain and inspectable. Public behavior should be judged against it.
 
 ## Compiled Engine Policy
 
-A compiled execution engine may be added for scale, but it must implement the
+A compiled execution engine may be used for scale, but it must implement the
 `ExecutionEngine` protocol and preserve observable behavior:
 
 - same input events;
@@ -46,6 +46,37 @@ replay = Replay(
 
 `Replay.run_many(...)` creates a fresh engine for each strategy run, so each
 strategy has isolated order state while sharing the same immutable event stream.
+
+## Optional C++ Engine
+
+`CppMatchingEngine` is the first optional compiled implementation. The core
+stores integer ticks; the Python wrapper accepts an explicit `tick_size` so the
+public API remains exact-`Decimal`.
+
+Build the extension in a source checkout:
+
+```bash
+python -m pip install -e ".[fast]"
+python setup_cpp.py build_ext --inplace
+```
+
+Then use it through the normal replay boundary:
+
+```python
+from ordersim import CppMatchingEngine, Replay
+
+replay = Replay(
+    data=source,
+    instrument=spec,
+    execution_engine_factory=lambda: CppMatchingEngine(
+        tick_size=spec.tick_size,
+    ),
+)
+```
+
+`CppMatchingEngine` is optional. Pure-Python installs remain valid, and
+`cpp_execution_engine_available()` reports whether the compiled extension is
+currently importable.
 
 ## Equivalence Harness
 

@@ -30,10 +30,12 @@ from ordersim.latency import (
 from ordersim.recording import RecordingGateway
 from ordersim.replay import Replay, ReplayGateway, ReplayResult
 from ordersim.sim import (
+    CppMatchingEngine,
     ExecutionEngine,
     ExecutionEngineFactory,
     MatchingEngine,
     PriceLevel,
+    cpp_execution_engine_available,
 )
 from ordersim.specs import InstrumentSpec
 from ordersim.types import (
@@ -53,6 +55,7 @@ from ordersim.types import (
 __all__ = [
     "BookSide",
     "ConstantLatency",
+    "CppMatchingEngine",
     "CsvSource",
     "DataSource",
     "EmpiricalBootstrap",
@@ -89,6 +92,7 @@ __all__ = [
     "TimeInForce",
     "ValuationMark",
     "build_equity_curve",
+    "cpp_execution_engine_available",
     "default_latency_model_factory",
     "normalize_events",
     "summarize_fills",
