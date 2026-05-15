@@ -53,6 +53,8 @@ answer:
 - Which fills arrived passively later?
 - Do two strategy variants behave differently on the same market replay?
 
+The editorial argument for this kind of inspection lives at [Trading Reality — Markets in Production](https://tradingreality.com)
+
 ## When To Use hftbacktest Instead
 
 Use `hftbacktest` when you need a mature, speed-oriented HFT backtesting
