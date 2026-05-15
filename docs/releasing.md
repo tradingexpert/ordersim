@@ -5,7 +5,7 @@ the README.
 
 ## Release Gates
 
-Before the first public release:
+Before any public release:
 
 1. `python -m build` must produce valid distributions;
 2. `python -m twine check dist/*` must pass;
@@ -33,12 +33,12 @@ repository.
 
 ## Versioning Direction
 
-The first public version is `0.1.0`. It is appropriate once:
+The first public version was `0.1.0`. Cut a new release when:
 
 - installation instructions are final for the release;
 - the preferred execution-engine story is settled;
 - one canonical example runs from a clean install;
-- the first release notes can say what a user can actually do.
+- the release notes can say what a user can actually do.
 
 Tag releases as `vX.Y.Z` so the tagged `Release` workflow builds the source
 distribution, builds native wheels for every supported platform, and publishes

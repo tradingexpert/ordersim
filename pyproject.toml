@@ -53,6 +53,8 @@ parquet = [
 [project.urls]
 Repository = "https://github.com/tradingexpert/ordersim"
 Issues = "https://github.com/tradingexpert/ordersim/issues"
+Documentation = "https://github.com/tradingexpert/ordersim/tree/main/docs"
+Changelog = "https://github.com/tradingexpert/ordersim/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

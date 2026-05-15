@@ -252,10 +252,12 @@ same input.
 
 ## Status
 
-Planned release sequence:
+`0.1.x` is live on PyPI. The current public line includes the Python reference
+engine, packaged C++ default, canonical connector -> Parquet -> replay workflow,
+latency models, economics, and public execution-equivalence fixtures.
 
-- `v0.1`: Python reference engine, packaged C++ default, and
-  a canonical connector -> Parquet -> replay workflow.
+Planned next milestones:
+
 - `v0.2`: broaden connector recipes, latency experiments, and notebook-first
   research ergonomics while keeping the C++ and Python engines equivalent.
 - `v1.0`: research-grade execution lab with notebook-first workflows,
