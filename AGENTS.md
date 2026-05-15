@@ -55,6 +55,8 @@ directly from a connector or from canonical Parquet.
 
 Use `docs/architecture.md` when deciding which boundary a change belongs on.
 
+Use `docs/releasing.md` before changing package-build or publishing behavior.
+
 ## Public Gateway Contract
 
 Strategies should only rely on the gateway surface:
