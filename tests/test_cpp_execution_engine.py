@@ -8,6 +8,7 @@ from ordersim import (
     MBOEvent,
     cpp_execution_engine_available,
 )
+from ordersim.sim import cpp_matching_engine
 from ordersim.testing import assert_execution_equivalence_suite
 
 pytestmark = pytest.mark.skipif(
@@ -40,6 +41,20 @@ def test_cpp_execution_engine_rejects_unaligned_strategy_price() -> None:
 
     with pytest.raises(ValueError, match="not aligned"):
         engine.place_limit(side="buy", price=Decimal("100.05"), size=1)
+
+
+def test_cpp_execution_engine_rejects_nonpositive_tick_size() -> None:
+    with pytest.raises(ValueError, match="tick_size must be positive"):
+        CppMatchingEngine(tick_size=Decimal("0"))
+
+
+def test_cpp_execution_engine_reports_unavailable_import(monkeypatch) -> None:
+    def missing_module() -> None:
+        raise ImportError("missing extension")
+
+    monkeypatch.setattr(cpp_matching_engine, "_load_cpp_module", missing_module)
+
+    assert cpp_execution_engine_available() is False
 
 
 def test_cpp_execution_engine_exposes_decimal_book_state() -> None:

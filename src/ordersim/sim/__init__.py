@@ -8,6 +8,7 @@ from ordersim.sim.execution import (
     ExecutionEngine,
     ExecutionEngineFactory,
     default_execution_engine_factory,
+    python_execution_engine_factory,
 )
 from ordersim.sim.matching_engine import (
     MatchingEngine,
@@ -26,4 +27,5 @@ __all__ = [
     "PublicOrder",
     "cpp_execution_engine_available",
     "default_execution_engine_factory",
+    "python_execution_engine_factory",
 ]

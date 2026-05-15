@@ -10,7 +10,7 @@ from ordersim.gateway import OrderGateway
 from ordersim.latency import LatencyModelFactory
 from ordersim.replay import Replay, ReplayResult
 from ordersim.replay.simulator import Strategy
-from ordersim.sim import ExecutionEngineFactory, default_execution_engine_factory
+from ordersim.sim import ExecutionEngineFactory, python_execution_engine_factory
 from ordersim.specs import InstrumentSpec
 from ordersim.types import MBOEvent
 
@@ -51,7 +51,7 @@ def compare_execution_engines(
     instrument: InstrumentSpec,
     strategy: Strategy,
     candidate_factory: ExecutionEngineFactory,
-    reference_factory: ExecutionEngineFactory = default_execution_engine_factory,
+    reference_factory: ExecutionEngineFactory = python_execution_engine_factory,
     latency_model_factory: LatencyModelFactory | None = None,
     strategy_name: str = "equivalence",
 ) -> ExecutionEquivalenceResult:
@@ -79,7 +79,7 @@ def assert_equivalent_execution_engines(
     instrument: InstrumentSpec,
     strategy: Strategy,
     candidate_factory: ExecutionEngineFactory,
-    reference_factory: ExecutionEngineFactory = default_execution_engine_factory,
+    reference_factory: ExecutionEngineFactory = python_execution_engine_factory,
     latency_model_factory: LatencyModelFactory | None = None,
     strategy_name: str = "equivalence",
 ) -> ExecutionEquivalenceResult:
@@ -133,7 +133,7 @@ def assert_execution_equivalence_suite(
     instrument: InstrumentSpec,
     candidate_factory: ExecutionEngineFactory,
     cases: Iterable[ExecutionEquivalenceCase] | None = None,
-    reference_factory: ExecutionEngineFactory = default_execution_engine_factory,
+    reference_factory: ExecutionEngineFactory = python_execution_engine_factory,
     latency_model_factory: LatencyModelFactory | None = None,
 ) -> tuple[ExecutionEquivalenceResult, ...]:
     """Assert that a candidate execution engine passes every equivalence case."""

@@ -1,7 +1,7 @@
 # ordersim
 
-An inspectable, deterministic, Python-native execution simulator for replaying
-real order-book data.
+An inspectable, deterministic execution simulator for replaying real order-book
+data, with a Python-facing API and equivalent Python/C++ execution engines.
 
 `ordersim` is built for researchers who need to audit every order intent,
 compare many strategies on the exact same replay, and let humans or AI agents
@@ -11,6 +11,8 @@ write strategies against a small gateway API.
 
 - Replays order-book data and simulates order execution with explicit order
   lifecycle events: place, cancel, fill, and passive fill.
+- Prefers a compiled C++ engine for ordinary replay when it is available, while
+  keeping a plain Python reference engine for inspection and equivalence tests.
 - Exposes own resting orders with visible queue-ahead size during replay.
 - Runs multi-strategy A/B comparisons on the same replay while keeping each
   strategy's orders, position, and portfolio state isolated.
@@ -25,7 +27,8 @@ write strategies against a small gateway API.
 - It is not a speed-first HFT framework.
 
 The design goal is clarity per line of code. Raw event throughput is secondary
-to understanding why an order did or did not fill.
+to understanding why an order did or did not fill, but compiled speed is welcome
+when it preserves the same observable behavior.
 
 ## Why This Exists
 
@@ -51,8 +54,8 @@ Use `hftbacktest` when you need a mature, speed-oriented HFT backtesting
 framework with Rust/Numba acceleration, queue-position models, latency models,
 and crypto-focused examples.
 
-Use `ordersim` when you want a smaller Python library focused on inspectable
-execution replay:
+Use `ordersim` when you want a smaller library with a Python-facing API focused
+on inspectable execution replay:
 
 | Need | Better Fit |
 |---|---|
@@ -65,18 +68,37 @@ execution replay:
 
 The projects serve different workflows.
 
-## Optional C++ Engine
+## Engine Design
 
-The pure Python engine is still the reference implementation. An optional
-`CppMatchingEngine` can be built from source for compiled replay while keeping
-the same public execution contract:
+The pure Python engine is still the reference implementation, because it is the
+clearest place to inspect queue behavior and prove equivalence. For ordinary
+`Replay(...)` runs, `ordersim` prefers the compiled `CppMatchingEngine` when it
+is available, because it preserves the same public contract while avoiding the
+Python hot loop.
+
+Build the C++ engine from source:
 
 ```bash
 python -m pip install -e ".[fast]"
 python setup_cpp.py build_ext --inplace
 ```
 
-Future compiled-engine work is accepted only when it passes the same public
+If the extension is not built, `Replay(...)` falls back to the Python engine.
+Use the Python engine explicitly when you are debugging fill behavior, teaching
+the model, developing a new engine, or working in an environment where compiling
+extensions is not worth the friction:
+
+```python
+from ordersim import MatchingEngine, Replay
+
+replay = Replay(
+    data=source,
+    instrument=spec,
+    execution_engine_factory=MatchingEngine,
+)
+```
+
+Compiled-engine work is accepted only when it passes the same public
 equivalence fixtures as the Python engine.
 
 ## Install
@@ -199,9 +221,9 @@ same input.
 
 Planned release sequence:
 
-- `v0.1`: pure Python, inspectable by default.
-- `v0.2`: package the optional compiled execution engine for distribution,
-  with Python equivalence fixtures required before release.
+- `v0.1`: Python reference engine plus source-built C++ default when available.
+- `v0.2`: package the compiled execution engine for easier distribution, with
+  Python equivalence fixtures required before release.
 - `v1.0`: research-grade execution lab with notebook-first workflows,
   connector recipes, latency model gallery, and public replay-equivalence
   harness.

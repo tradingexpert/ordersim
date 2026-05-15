@@ -24,6 +24,7 @@ from ordersim.sim import (
     ExecutionEngineFactory,
     PriceLevel,
     default_execution_engine_factory,
+    python_execution_engine_factory,
 )
 from ordersim.specs import InstrumentSpec
 from ordersim.types import (
@@ -64,7 +65,7 @@ class ReplayGateway:
         self._data = tuple(
             sorted(normalize_events(data), key=lambda event: event.ts_ns)
         )
-        self._engine = engine or default_execution_engine_factory()
+        self._engine = engine or python_execution_engine_factory()
         self._latency_model = latency_model or default_latency_model_factory()
         self._cursor = 0
         self._now_ns = 0
@@ -192,7 +193,8 @@ class Replay:
         self.instrument = instrument
         self.record_to = record_to
         self._execution_engine_factory = (
-            execution_engine_factory or default_execution_engine_factory
+            execution_engine_factory
+            or default_execution_engine_factory(tick_size=instrument.tick_size)
         )
         self._latency_model_factory = (
             latency_model_factory or default_latency_model_factory

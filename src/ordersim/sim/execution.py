@@ -64,9 +64,27 @@ class ExecutionEngine(Protocol):
 ExecutionEngineFactory = Callable[[], ExecutionEngine]
 
 
-def default_execution_engine_factory() -> ExecutionEngine:
-    """Return the default pure Python reference engine."""
+def python_execution_engine_factory() -> ExecutionEngine:
+    """Return the pure Python reference engine."""
 
     from ordersim.sim.matching_engine import MatchingEngine
 
     return MatchingEngine()
+
+
+def default_execution_engine_factory(*, tick_size: Price) -> ExecutionEngineFactory:
+    """Return the preferred replay engine factory for one instrument.
+
+    The compiled engine is the normal default when it is available. The Python
+    engine remains the explicit reference implementation and the fallback when
+    the extension has not been built.
+    """
+
+    from ordersim.sim.cpp_matching_engine import (
+        CppMatchingEngine,
+        cpp_execution_engine_available,
+    )
+
+    if cpp_execution_engine_available():
+        return lambda: CppMatchingEngine(tick_size=tick_size)
+    return python_execution_engine_factory

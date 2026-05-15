@@ -1,5 +1,14 @@
 # Execution Engines
 
+`ordersim` deliberately has two execution paths:
+
+- the C++ engine is the preferred default for ordinary replay when available;
+- the Python engine is the readable reference used to inspect behavior and
+  prove equivalence.
+
+That split is intentional. It keeps the hot path fast without making the model
+opaque.
+
 Execution engines consume normalized `MBOEvent` rows and strategy order intents.
 They do not read vendor data directly.
 
@@ -20,6 +29,25 @@ extension points:
 `MatchingEngine` is the pure Python reference engine. It is intentionally
 plain and inspectable. Public behavior should be judged against it.
 
+## Default Selection
+
+`Replay(...)` prefers `CppMatchingEngine` when the compiled extension is
+available. It does so because compiled replay is the normal useful default once
+behavioral equivalence has been proven: users get the same fills and order log
+without paying Python-loop cost on every run.
+
+If the extension is unavailable, `Replay(...)` falls back to `MatchingEngine`.
+Pass `execution_engine_factory=MatchingEngine` when the Python version is the
+better tool:
+
+- stepping through queue behavior in a debugger;
+- teaching or documenting the model;
+- developing or reviewing a new engine;
+- running in an environment where building extensions is not worthwhile.
+
+Skipping the C++ engine is an observability choice, not a fidelity choice. The
+two engines are expected to preserve the same public replay behavior.
+
 ## Compiled Engine Policy
 
 A compiled execution engine may be used for scale, but it must implement the
@@ -34,7 +62,7 @@ A compiled execution engine may be used for scale, but it must implement the
 - same equity curve;
 - same order-intent log where replay exposes it.
 
-Compiled execution engines are selected by passing an engine factory to `Replay`:
+Non-default execution engines are selected by passing an engine factory to `Replay`:
 
 ```python
 replay = Replay(
@@ -47,9 +75,9 @@ replay = Replay(
 `Replay.run_many(...)` creates a fresh engine for each strategy run, so each
 strategy has isolated order state while sharing the same immutable event stream.
 
-## Optional C++ Engine
+## C++ Engine
 
-`CppMatchingEngine` is the first optional compiled implementation. The core
+`CppMatchingEngine` is the first compiled implementation. The core
 stores integer ticks; the Python wrapper accepts an explicit `tick_size` so the
 public API remains exact-`Decimal`.
 
@@ -60,7 +88,8 @@ python -m pip install -e ".[fast]"
 python setup_cpp.py build_ext --inplace
 ```
 
-Then use it through the normal replay boundary:
+`Replay(...)` uses it automatically after it is built. You can also select it
+explicitly through the normal replay boundary:
 
 ```python
 from ordersim import CppMatchingEngine, Replay
@@ -74,9 +103,15 @@ replay = Replay(
 )
 ```
 
-`CppMatchingEngine` is optional. Pure-Python installs remain valid, and
+`CppMatchingEngine` is optional at install time. Pure-Python installs remain
+valid, and
 `cpp_execution_engine_available()` reports whether the compiled extension is
 currently importable.
+
+The repository also runs native C++ core tests in CI. Those tests catch
+low-level engine regressions before Python enters the picture; the replay
+equivalence suite is still required because native tests alone cannot prove the
+public API remains identical.
 
 ## Equivalence Harness
 

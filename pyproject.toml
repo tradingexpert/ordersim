@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "ordersim"
 version = "0.0.0"
-description = "Inspectable Python execution simulator for order-book replay"
+description = "Inspectable execution simulator for order-book replay"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -38,9 +38,11 @@ dev = [
   "pytest>=8",
   "pytest-cov>=6",
   "ruff>=0.8",
+  "setuptools>=68",
 ]
 fast = [
   "pybind11>=3",
+  "setuptools>=68",
 ]
 
 [project.urls]

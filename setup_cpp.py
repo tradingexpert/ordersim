@@ -9,7 +9,7 @@ setup(
         Extension(
             "ordersim._matching_engine_cpp",
             ["cpp/matching_engine_cpp.cpp"],
-            include_dirs=[pybind11.get_include()],
+            include_dirs=[pybind11.get_include(), "cpp"],
             language="c++",
             extra_compile_args=["-O3", "-std=c++17"],
         )

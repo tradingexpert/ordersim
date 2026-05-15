@@ -36,6 +36,8 @@ from ordersim.sim import (
     MatchingEngine,
     PriceLevel,
     cpp_execution_engine_available,
+    default_execution_engine_factory,
+    python_execution_engine_factory,
 )
 from ordersim.specs import InstrumentSpec
 from ordersim.types import (
@@ -93,7 +95,9 @@ __all__ = [
     "ValuationMark",
     "build_equity_curve",
     "cpp_execution_engine_available",
+    "default_execution_engine_factory",
     "default_latency_model_factory",
     "normalize_events",
+    "python_execution_engine_factory",
     "summarize_fills",
 ]
