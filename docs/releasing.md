@@ -57,7 +57,7 @@ The `Wheels` workflow covers:
 |---|---|
 | `ubuntu-latest` | Linux wheels |
 | `windows-latest` | Windows wheels |
-| `macos-13` | Intel macOS wheels |
+| `macos-15-intel` | Intel macOS wheels |
 | `macos-14` | Apple Silicon macOS wheels |
 
 The release target is CPython `3.11` and `3.12` on those platforms.
