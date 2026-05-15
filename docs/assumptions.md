@@ -22,6 +22,10 @@ This is often called Level 3, L3, MBO, or market-by-order data.
 
 The normalized public event type is `MBOEvent`; see `docs/schema.md`.
 
+Public timestamps are normalized as UTC Unix-epoch nanoseconds. Connectors own
+timezone-aware conversion from vendor or exchange-local source timestamps
+before replay sees the data.
+
 Lower-fidelity data can be supported, but must be named honestly. A Level 2 or
 MBP source provides aggregated size by price level, not individual queue
 members. Queue-position behavior inferred from MBP is necessarily a model, not

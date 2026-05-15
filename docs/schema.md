@@ -4,13 +4,26 @@
 The schema is intentionally boring so connectors can be reviewed without
 knowing the vendor SDK.
 
+## Timestamp Convention
+
+All public `ts_ns` fields are integer nanoseconds since the Unix epoch in UTC.
+They are timezone-normalized values, not naive local wall-clock timestamps.
+
+Connectors must convert vendor timestamps into UTC epoch nanoseconds before
+emitting public dataclasses. If a source uses exchange-local wall time, the
+connector owns timezone-aware parsing, including daylight-saving transitions,
+before replay sees the event.
+
+The replay layer operates only on normalized integer timestamps. It does not
+carry Python timezone objects or infer timezone rules after normalization.
+
 ## `MBOEvent`
 
 `MBOEvent` represents one Level 3 / market-by-order event.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `ts_ns` | `int` | Event timestamp in integer nanoseconds. |
+| `ts_ns` | `int` | UTC Unix-epoch timestamp in integer nanoseconds. |
 | `action` | `"add" \| "cancel" \| "modify" \| "trade"` | Book action. |
 | `side` | `"bid" \| "ask"` | Resting book side affected by the event. |
 | `price` | `Decimal` | Exact event price. |
@@ -31,7 +44,7 @@ represented with `side="ask"`.
 | `side` | `"buy" \| "sell"` | Strategy side of the execution. |
 | `price` | `Decimal` | Exact fill price. |
 | `size` | `int` | Filled quantity in contracts/lots. |
-| `ts_ns` | `int` | Simulated venue timestamp in integer nanoseconds. |
+| `ts_ns` | `int` | Simulated venue timestamp as UTC Unix-epoch nanoseconds. |
 
 For passive fills, `side` still means the strategy side. A resting own bid that
 is later filled by public trade volume is therefore reported as `side="buy"`.
@@ -77,14 +90,14 @@ See `docs/economics.md` for the assumptions and explicit non-goals.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `ts_ns` | `int` | Mark timestamp in integer nanoseconds. |
+| `ts_ns` | `int` | Mark timestamp as UTC Unix-epoch nanoseconds. |
 | `price` | `Decimal` | Price used for open-lot valuation. |
 
 `EquityPoint` is one output row from a mark-to-market equity curve.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `ts_ns` | `int` | Valuation timestamp. |
+| `ts_ns` | `int` | Valuation timestamp as UTC Unix-epoch nanoseconds. |
 | `mark_price` | `Decimal` | Price used to value open lots. |
 | `realized_pnl` | `Decimal` | FIFO realized PnL through the mark. |
 | `unrealized_pnl` | `Decimal` | Open-lot PnL at `mark_price`. |

@@ -218,7 +218,8 @@ Good connector PRs:
 
 - implement the `DataSource` protocol;
 - include a tiny fixture or generator;
-- document timestamp, price, size, and order-id semantics;
+- document source timestamp semantics, UTC normalization, price, size, and
+  order-id semantics;
 - add at least one replay test.
 
 For simple examples, prefer the canonical `CsvSource` schema before adding a
