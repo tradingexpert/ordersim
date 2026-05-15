@@ -2,6 +2,7 @@
 
 from ordersim.connectors import (
     CsvSource,
+    DatabentoMboSource,
     DataSource,
     EventInput,
     InMemorySource,
@@ -60,6 +61,7 @@ __all__ = [
     "CppMatchingEngine",
     "CsvSource",
     "DataSource",
+    "DatabentoMboSource",
     "EmpiricalBootstrap",
     "EmpiricalPlayback",
     "EventInput",

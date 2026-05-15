@@ -33,6 +33,9 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
+databento = [
+  "databento",
+]
 dev = [
   "pybind11>=3",
   "pytest>=8",

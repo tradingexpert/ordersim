@@ -77,3 +77,54 @@ nanoseconds. It does not parse local datetime strings or infer timezone rules.
 `CsvSource` is not a vendor adapter. A Databento, LOBSTER, or exchange-specific
 connector should convert its source schema into this canonical shape and
 document any lossy conversion.
+
+## Databento MBO Sources
+
+Use `DatabentoMboSource` with raw Databento MBO records, such as records yielded
+by an iterable `DBNStore`:
+
+```python
+import databento as db
+
+from ordersim import DatabentoMboSource, Replay
+
+store = db.DBNStore.from_file("GLBX.MDP3-ES-20260102.mbo.dbn.zst")
+source = DatabentoMboSource(store)
+replay = Replay(data=source, instrument=spec)
+```
+
+Install the optional Databento client when you need to fetch or read Databento
+records:
+
+```bash
+pip install "ordersim[databento]"
+```
+
+### Databento Mapping
+
+`DatabentoMboSource` expects raw MBO records with Databento's native integer
+price units:
+
+| Databento field | Normalized handling |
+|---|---|
+| `ts_event` | Default `ts_ns`; already UTC Unix-epoch nanoseconds. |
+| `ts_recv` | Optional `ts_ns` when `timestamp_field="ts_recv"`. |
+| `price` | Raw integer nanounits converted exactly to `Decimal`. |
+| `A` / `M` / `C` | Normalized to `add` / `modify` / `cancel`. |
+| `F` | Normalized to resting-side `trade`. |
+| `T` / `N` | Ignored because they do not identify resting-side book mutation. |
+
+Databento's raw `Trade` record carries the aggressor side, while `Fill` carries
+the resting side. `ordersim` needs resting-side execution volume to model
+passive fills, so the connector uses `Fill` records for normalized `trade`
+events. Databento also emits a paired `Cancel` for book mutation; within one
+Databento publisher event group, the connector keeps the `Fill`-derived
+`trade` and drops the paired `Cancel` so the simulator does not consume the
+same visible quantity twice. Unsided `Fill` records are ignored because they do
+not identify a visible resting book side to consume.
+
+Leading Databento `R` clear records are ignored because a fresh `Replay` starts
+from an empty book already. Mid-stream clear records are rejected: the current
+public event schema has no clear-book action, so silently accepting them would
+make replay state wrong. Records marked `F_MBP` are also rejected because they
+represent aggregated price-level updates rather than order-level MBO.

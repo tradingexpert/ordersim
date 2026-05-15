@@ -7,10 +7,12 @@ from ordersim.connectors.base import (
     normalize_events,
 )
 from ordersim.connectors.csv import CsvSource
+from ordersim.connectors.databento import DatabentoMboSource
 
 __all__ = [
     "CsvSource",
     "DataSource",
+    "DatabentoMboSource",
     "EventInput",
     "InMemorySource",
     "normalize_events",

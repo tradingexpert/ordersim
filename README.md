@@ -124,6 +124,17 @@ from ordersim import CsvSource
 source = CsvSource("events.csv")
 ```
 
+Raw Databento MBO records can be normalized directly too:
+
+```python
+import databento as db
+
+from ordersim import DatabentoMboSource
+
+store = db.DBNStore.from_file("GLBX.MDP3-ES-20260102.mbo.dbn.zst")
+source = DatabentoMboSource(store)
+```
+
 ## A Tiny Example
 
 This example uses synthetic fixture data shipped with the package, so it does
