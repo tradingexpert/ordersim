@@ -51,6 +51,22 @@ is later filled by public trade volume is therefore reported as `side="buy"`.
 This keeps fills directly usable for audit trails and future cash/PnL
 accounting without reconstructing intent from surrounding events.
 
+## `RestingOrder`
+
+`RestingOrder` represents one own strategy order still resting on the simulated
+book.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `order_id` | `int` | Simulated strategy order id. |
+| `side` | `"buy" \| "sell"` | Strategy side of the resting order. |
+| `price` | `Decimal` | Resting limit price. |
+| `remaining_size` | `int` | Unfilled quantity still resting. |
+| `queue_ahead_size` | `int` | Visible size ahead of the order at its price. |
+
+`gateway.own_orders()` returns these rows during replay. `ReplayResult` keeps
+the final rows as `resting_orders`.
+
 ## `InstrumentSpec`
 
 `InstrumentSpec` holds execution-relevant instrument economics.

@@ -61,6 +61,7 @@ An acceptable compiled execution engine:
 
 - produces the same fills as the Python engine on public fixtures;
 - preserves final position and execution-summary accounting;
+- preserves own resting-order snapshots;
 - preserves equity-curve valuation points;
 - preserves observable order-intent behavior;
 - passes the public execution-equivalence harness;

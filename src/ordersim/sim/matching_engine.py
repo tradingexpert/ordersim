@@ -7,7 +7,16 @@ future compiled execution engine must match before it can be trusted.
 from dataclasses import dataclass
 from typing import Literal
 
-from ordersim.types import BookSide, Fill, MBOEvent, OrderId, OrderResult, Price, Side
+from ordersim.types import (
+    BookSide,
+    Fill,
+    MBOEvent,
+    OrderId,
+    OrderResult,
+    Price,
+    RestingOrder,
+    Side,
+)
 
 QueueOwner = Literal["public", "own"]
 
@@ -59,7 +68,7 @@ class MatchingEngine:
         self.bids: dict[Price, int] = {}
         self.asks: dict[Price, int] = {}
         self.public_orders: dict[OrderId, PublicOrder] = {}
-        self.own_orders: dict[OrderId, OwnOrder] = {}
+        self._own_orders: dict[OrderId, OwnOrder] = {}
         self._queues: dict[tuple[BookSide, Price], list[_QueueEntry]] = {}
         self._passive_fills: list[Fill] = []
         self._next_order_id = 1_000_000_000
@@ -131,7 +140,7 @@ class MatchingEngine:
     def cancel(self, order_id: OrderId) -> bool:
         """Cancel one own resting order."""
 
-        order = self.own_orders.pop(order_id, None)
+        order = self._own_orders.pop(order_id, None)
         if order is None:
             return False
 
@@ -179,24 +188,23 @@ class MatchingEngine:
             raise ValueError("cannot move engine time backwards")
         self._now_ns = ts_ns
 
-    def own_orders_snapshot(
-        self,
-    ) -> tuple[tuple[OrderId, BookSide, Price, int, int], ...]:
-        """Return own resting orders with current queue-ahead quantity.
-
-        Rows are ``(order_id, side, price, remaining_size, queue_ahead_size)``.
-        """
+    def own_orders(self) -> tuple[RestingOrder, ...]:
+        """Return own resting orders with current queue-ahead quantity."""
 
         return tuple(
-            (
-                order.order_id,
-                order.side,
-                order.price,
-                order.size,
-                self._queue_ahead(order.side, order.price, order.order_id),
+            RestingOrder(
+                order_id=order.order_id,
+                side=_order_side_for_book_side(order.side),
+                price=order.price,
+                remaining_size=order.size,
+                queue_ahead_size=self._queue_ahead(
+                    order.side,
+                    order.price,
+                    order.order_id,
+                ),
             )
             for order in sorted(
-                self.own_orders.values(),
+                self._own_orders.values(),
                 key=lambda item: item.order_id,
             )
         )
@@ -276,7 +284,7 @@ class MatchingEngine:
         size: int,
     ) -> None:
         order = OwnOrder(order_id=order_id, side=side, price=price, size=size)
-        self.own_orders[order_id] = order
+        self._own_orders[order_id] = order
         self._queue(side, price).append(_QueueEntry("own", order_id))
         self._add_to_book(side, price, size)
 
@@ -375,7 +383,7 @@ class MatchingEngine:
         available_size: int,
         ts_ns: int,
     ) -> int:
-        order = self.own_orders.get(order_id)
+        order = self._own_orders.get(order_id)
         if order is None:
             return 0
 
@@ -393,7 +401,7 @@ class MatchingEngine:
         self._position += consumed if side == "bid" else -consumed
 
         if order.size == 0:
-            del self.own_orders[order_id]
+            del self._own_orders[order_id]
             self._queue(side, price).pop(0)
         return consumed
 
@@ -405,7 +413,7 @@ class MatchingEngine:
             if entry.owner == "public":
                 order = self.public_orders.get(entry.order_id)
             else:
-                order = self.own_orders.get(entry.order_id)
+                order = self._own_orders.get(entry.order_id)
             if order is not None:
                 total += order.size
         raise KeyError(order_id)

@@ -32,6 +32,7 @@ from ordersim.types import (
     OrderId,
     OrderResult,
     Price,
+    RestingOrder,
     Side,
     TimeInForce,
 )
@@ -46,6 +47,7 @@ class ReplayResult:
     fills: tuple[Fill, ...]
     order_events: tuple[OrderEvent, ...]
     final_position: int
+    resting_orders: tuple[RestingOrder, ...]
     execution_summary: ExecutionSummary
     equity_curve: tuple[EquityPoint, ...]
 
@@ -152,6 +154,11 @@ class ReplayGateway:
 
         return self._engine.position()
 
+    def own_orders(self) -> tuple[RestingOrder, ...]:
+        """Return own resting orders with current queue-ahead quantity."""
+
+        return self._engine.own_orders()
+
     def now_ns(self) -> int:
         """Return current replay time in integer nanoseconds."""
 
@@ -228,6 +235,7 @@ class Replay:
             fills=gateway.fills,
             order_events=tuple(order_events),
             final_position=gateway.position(),
+            resting_orders=gateway.own_orders(),
             execution_summary=execution_summary,
             equity_curve=equity_curve,
         )

@@ -35,6 +35,17 @@ class Fill:
 
 
 @dataclass(frozen=True, slots=True)
+class RestingOrder:
+    """One own order currently resting on the simulated book."""
+
+    order_id: OrderId
+    side: Side
+    price: Price
+    remaining_size: int
+    queue_ahead_size: int
+
+
+@dataclass(frozen=True, slots=True)
 class MBOEvent:
     """One normalized market-by-order event.
 

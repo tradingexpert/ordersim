@@ -11,6 +11,7 @@ write strategies against a small gateway API.
 
 - Replays order-book data and simulates order execution with explicit order
   lifecycle events: place, cancel, fill, and passive fill.
+- Exposes own resting orders with visible queue-ahead size during replay.
 - Runs multi-strategy A/B comparisons on the same replay while keeping each
   strategy's orders, position, and portfolio state isolated.
 - Exposes a small, regular Python API that is easy to read, debug, test, and
@@ -39,6 +40,7 @@ answer:
 - What did the simulated venue receive?
 - Which orders filled immediately?
 - Which orders rested?
+- How much visible queue remained ahead of a resting order?
 - Which orders were cancelled?
 - Which fills arrived passively later?
 - Do two strategy variants behave differently on the same market replay?

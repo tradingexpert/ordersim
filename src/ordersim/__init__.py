@@ -45,6 +45,7 @@ from ordersim.types import (
     OrderId,
     OrderResult,
     Price,
+    RestingOrder,
     Side,
     TimeInForce,
 )
@@ -82,6 +83,7 @@ __all__ = [
     "Replay",
     "ReplayGateway",
     "ReplayResult",
+    "RestingOrder",
     "RecordingGateway",
     "Side",
     "TimeInForce",

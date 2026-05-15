@@ -10,6 +10,7 @@ from ordersim import (
     MBOEvent,
     PriceLevel,
     Replay,
+    RestingOrder,
 )
 from ordersim.fixtures.synthetic import SyntheticSource
 from ordersim.types import OrderEvent
@@ -108,6 +109,47 @@ def test_replay_gateway_exposes_book_depth() -> None:
     assert result.fills == ()
     assert result.order_events == ()
     assert result.equity_curve[-1].equity == Decimal("0")
+
+
+def test_replay_exposes_own_resting_orders_with_queue_ahead() -> None:
+    events = (
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="bid",
+            price=Decimal("100.0"),
+            size=3,
+            order_id=1,
+        ),
+    )
+    replay = Replay(data=events, instrument=gc_spec())
+
+    def strategy(gateway) -> None:
+        gateway.advance_to(1)
+        result = gateway.place_limit(side="buy", price=Decimal("100.0"), size=2)
+
+        assert result.order_id is not None
+        assert gateway.own_orders() == (
+            RestingOrder(
+                order_id=result.order_id,
+                side="buy",
+                price=Decimal("100.0"),
+                remaining_size=2,
+                queue_ahead_size=3,
+            ),
+        )
+
+    result = replay.run(strategy)
+
+    assert result.resting_orders == (
+        RestingOrder(
+            order_id=1_000_000_000,
+            side="buy",
+            price=Decimal("100.0"),
+            remaining_size=2,
+            queue_ahead_size=3,
+        ),
+    )
 
 
 def test_replay_rejects_unaligned_event_prices() -> None:
