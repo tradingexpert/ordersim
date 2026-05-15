@@ -113,6 +113,10 @@ because it preserves the same public behavior while avoiding the Python hot
 loop. `MatchingEngine` remains the reference implementation because it is the
 easiest place to inspect queue behavior and define equivalence.
 
+Inside that reference engine, public market-data mutations are kept separate
+from strategy-order matching helpers so the book lifecycle can be read in the
+same order the simulator applies it.
+
 Compiled-engine changes are accepted only when they match the public Python
 fixtures.
 

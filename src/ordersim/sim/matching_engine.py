@@ -119,7 +119,7 @@ class MatchingEngine:
         resting_order_id: OrderId | None = None
         if remaining > 0 and tif == "GTC":
             resting_side = _book_side_for_order_side(side)
-            self._add_own(order_id, resting_side, price, remaining)
+            self._rest_own_order(order_id, resting_side, price, remaining)
             resting_order_id = order_id
 
         return OrderResult(order_id=resting_order_id, fills=tuple(active_fills))
@@ -216,6 +216,8 @@ class MatchingEngine:
         self._passive_fills.clear()
         return fills
 
+    # Public market-data mutations.
+
     def _add_public(self, event: MBOEvent) -> None:
         order = PublicOrder(
             order_id=event.order_id,
@@ -223,11 +225,7 @@ class MatchingEngine:
             price=event.price,
             size=event.size,
         )
-        self.public_orders[event.order_id] = order
-        self._queue(event.side, event.price).append(
-            _QueueEntry("public", event.order_id)
-        )
-        self._add_to_book(event.side, event.price, event.size)
+        self._rest_public_order(order)
 
     def _cancel_public(self, event: MBOEvent) -> None:
         order = self.public_orders.get(event.order_id)
@@ -239,8 +237,7 @@ class MatchingEngine:
         order.size -= cancelled
         self._remove_from_book(order.side, order.price, cancelled)
         if order.size == 0:
-            del self.public_orders[event.order_id]
-            self._remove_from_queue(order.side, order.price, "public", event.order_id)
+            self._remove_public_order(order)
 
     def _modify_public(self, event: MBOEvent) -> None:
         order = self.public_orders.get(event.order_id)
@@ -250,33 +247,55 @@ class MatchingEngine:
 
         same_level = order.side == event.side and order.price == event.price
         if same_level:
-            delta = event.size - order.size
-            if delta > 0:
-                self._add_to_book(order.side, order.price, delta)
-            elif delta < 0:
-                self._remove_from_book(order.side, order.price, -delta)
-            order.size = event.size
-            if order.size == 0:
-                del self.public_orders[event.order_id]
-                self._remove_from_queue(
-                    order.side,
-                    order.price,
-                    "public",
-                    event.order_id,
-                )
+            self._resize_public_order(order, event.size)
             return
 
-        self._remove_from_book(order.side, order.price, order.size)
-        self._remove_from_queue(order.side, order.price, "public", event.order_id)
-        order.side = event.side
-        order.price = event.price
-        order.size = event.size
-        self._queue(event.side, event.price).append(
-            _QueueEntry("public", event.order_id)
+        self._move_public_order(
+            order,
+            side=event.side,
+            price=event.price,
+            size=event.size,
         )
-        self._add_to_book(event.side, event.price, event.size)
 
-    def _add_own(
+    def _rest_public_order(self, order: PublicOrder) -> None:
+        self.public_orders[order.order_id] = order
+        self._queue(order.side, order.price).append(
+            _QueueEntry("public", order.order_id)
+        )
+        self._add_to_book(order.side, order.price, order.size)
+
+    def _resize_public_order(self, order: PublicOrder, size: int) -> None:
+        delta = size - order.size
+        if delta > 0:
+            self._add_to_book(order.side, order.price, delta)
+        elif delta < 0:
+            self._remove_from_book(order.side, order.price, -delta)
+        order.size = size
+        if order.size == 0:
+            self._remove_public_order(order)
+
+    def _move_public_order(
+        self,
+        order: PublicOrder,
+        *,
+        side: BookSide,
+        price: Price,
+        size: int,
+    ) -> None:
+        self._remove_from_book(order.side, order.price, order.size)
+        self._remove_from_queue(order.side, order.price, "public", order.order_id)
+        order.side = side
+        order.price = price
+        order.size = size
+        self._rest_public_order(order)
+
+    def _remove_public_order(self, order: PublicOrder) -> None:
+        del self.public_orders[order.order_id]
+        self._remove_from_queue(order.side, order.price, "public", order.order_id)
+
+    # Strategy-order mutation and matching.
+
+    def _rest_own_order(
         self,
         order_id: OrderId,
         side: BookSide,
