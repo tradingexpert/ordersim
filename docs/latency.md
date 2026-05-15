@@ -76,6 +76,18 @@ are applied first.
 The response-latency leg is part of the public model contract, but replay does
 not yet delay local strategy observation of fills.
 
+## Demo
+
+`examples/latency_demo.py` runs the same strategy over the same tiny order-book
+replay with two entry-latency settings. With zero entry latency, the limit order
+reaches the bid before the public trade and fills passively at `100.0`. With
+`15 ns` of entry latency, the order reaches the venue after that trade and the
+same strategy later has to cross the spread at `101.0`.
+
+The demo is intentionally about entry latency, because response latency is
+already part of the public model contract but is not yet applied to delayed
+strategy observation during replay.
+
 ## Planned Models
 
 The longer-term latency library should add:

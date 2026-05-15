@@ -117,3 +117,55 @@ class SyntheticSource:
                 order_id=20,
             ),
         )
+
+    @staticmethod
+    def latency_demo_mbo() -> tuple[MBOEvent, ...]:
+        """Return a tiny replay where entry latency changes the fill path.
+
+        A fast resting bid joins before the public trade at timestamp 110 and
+        fills passively. A delayed order reaches the venue after that trade,
+        so the same strategy later has to cancel and cross the spread.
+        """
+
+        return (
+            MBOEvent(
+                ts_ns=100,
+                action="add",
+                side="ask",
+                price=Decimal("101.0"),
+                size=10,
+                order_id=10,
+            ),
+            MBOEvent(
+                ts_ns=101,
+                action="add",
+                side="bid",
+                price=Decimal("100.0"),
+                size=2,
+                order_id=20,
+            ),
+            MBOEvent(
+                ts_ns=105,
+                action="cancel",
+                side="bid",
+                price=Decimal("100.0"),
+                size=1,
+                order_id=20,
+            ),
+            MBOEvent(
+                ts_ns=110,
+                action="trade",
+                side="bid",
+                price=Decimal("100.0"),
+                size=2,
+                order_id=20,
+            ),
+            MBOEvent(
+                ts_ns=120,
+                action="add",
+                side="bid",
+                price=Decimal("99.9"),
+                size=5,
+                order_id=21,
+            ),
+        )

@@ -3,9 +3,14 @@
 An inspectable, deterministic execution simulator for replaying real order-book
 data, with a Python-facing API and equivalent Python/C++ execution engines.
 
-`ordersim` is built for researchers who need to audit every order intent,
-compare many strategies on the exact same replay, and let humans or AI agents
-write strategies against a small gateway API.
+Most backtests collapse execution into a final PnL line. `ordersim` exists to
+inspect the path between order intent and actual fills.
+
+![Same replay, same strategy, different latency](https://raw.githubusercontent.com/tradingexpert/ordersim/main/docs/assets/latency-demo.svg)
+
+It is built for researchers who need to audit every order intent, compare many
+strategies on the exact same replay, and let humans or AI agents write
+strategies against a small gateway API.
 
 ## What It Does
 
@@ -32,7 +37,7 @@ when it preserves the same observable behavior.
 
 ## Why This Exists
 
-Most backtests hide execution behavior behind aggregate PnL. That is not enough
+Aggregate PnL is not enough
 when the strategy depends on queue position, latency, cancel timing, partial
 fills, and passive resting orders.
 
@@ -221,6 +226,8 @@ replay = Replay(
     latency_model_factory=lambda: ConstantLatency(entry_ns=25_000_000),
 )
 ```
+
+For a visual latency comparison, run `examples/latency_demo.py`.
 
 ## Multi-Strategy Replay
 
