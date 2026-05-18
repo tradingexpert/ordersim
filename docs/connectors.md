@@ -180,17 +180,25 @@ price units:
 | `ts_recv` | Optional `ts_ns` when `timestamp_field="ts_recv"`. |
 | `price` | Raw integer nanounits converted exactly to `Decimal`. |
 | `A` / `M` / `C` | Normalized to `add` / `modify` / `cancel`. |
-| `F` | Normalized to resting-side `trade`. |
-| `T` / `N` | Ignored because they do not identify resting-side book mutation. |
+| `T` | Normalized to `trade`; the aggressor side is inverted into the resting book side. |
+| `F` | Used to infer the resting side for unsided `T` rows, or as a fallback when a usable `T` row is absent. |
+| `N` | Ignored because it does not identify book mutation. |
 
-Databento's raw `Trade` record carries the aggressor side, while `Fill` carries
-the resting side. `ordersim` needs resting-side execution volume to model
-passive fills, so the connector uses `Fill` records for normalized `trade`
-events. Databento also emits a paired `Cancel` for book mutation; within one
-Databento publisher event group, the connector keeps the `Fill`-derived
-`trade` and drops the paired `Cancel` so the simulator does not consume the
-same visible quantity twice. Unsided `Fill` records are ignored because they do
-not identify a visible resting book side to consume.
+Databento's raw `Trade` record carries the aggressor side and the full trade
+quantity, while `Fill` carries the resting side of public executions. The full
+`Trade` quantity matters when simulated own orders rest inside the visible
+queue: the quantity that reaches an own order may be larger than the public
+fills present in the historical feed. When a usable `Trade` row exists,
+`ordersim` therefore keeps that full quantity and derives the resting side by
+inverting the aggressor side. For an unsided `Trade`, a single sided `Fill`
+side in the same publisher event group can supply the resting side.
+
+If a publisher event group has no usable `Trade` row, the connector falls back
+to sided `Fill` rows as normalized `trade` events. Databento also emits paired
+`Cancel` rows for public book mutation; within one publisher event group, the
+connector drops cancels paired with fills so the simulator does not consume the
+same visible quantity twice. Unsided `Fill` rows are ignored because they do not
+identify a visible resting book side to consume.
 
 Leading Databento `R` clear records are ignored because a fresh `Replay` starts
 from an empty book already. Mid-stream clear records are rejected: the current

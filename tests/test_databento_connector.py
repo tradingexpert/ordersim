@@ -91,13 +91,46 @@ def test_databento_source_collapses_fill_cancel_pair_for_replay() -> None:
         action="trade",
         side="bid",
         price=Decimal("100.000000000"),
-        size=1,
-        order_id=10,
+        size=2,
+        order_id=20,
     )
     assert result.final_position == 1
     assert [(fill.side, fill.price, fill.size) for fill in result.fills] == [
         ("buy", Decimal("100.000000000"), 1),
     ]
+
+
+def test_databento_trade_quantity_can_reach_own_orders_after_public_fills() -> None:
+    source = DatabentoMboSource(
+        [
+            DatabentoRecord(1, 11, "A", "B", 100_000_000_000, 5, 10, 128),
+            DatabentoRecord(2, 12, "A", "A", 101_000_000_000, 5, 11, 128),
+            DatabentoRecord(3, 13, "T", "A", 100_000_000_000, 7, 20, 0),
+            DatabentoRecord(3, 13, "F", "B", 100_000_000_000, 5, 10, 0),
+            DatabentoRecord(3, 13, "C", "B", 100_000_000_000, 5, 10, 128),
+        ]
+    )
+    replay = Replay(data=source, instrument=gc_spec())
+
+    def strategy(gateway) -> None:
+        gateway.advance_to(2)
+        gateway.place_limit(side="buy", price=Decimal("100.0"), size=2)
+        gateway.advance_to(3)
+
+    result = replay.run(strategy)
+
+    assert source.events()[2] == MBOEvent(
+        ts_ns=3,
+        action="trade",
+        side="bid",
+        price=Decimal("100.000000000"),
+        size=7,
+        order_id=20,
+    )
+    assert [(fill.side, fill.price, fill.size) for fill in result.fills] == [
+        ("buy", Decimal("100.000000000"), 2),
+    ]
+    assert result.resting_orders == ()
 
 
 def test_databento_source_can_use_receive_timestamps() -> None:
@@ -115,6 +148,51 @@ def test_databento_source_ignores_unsided_fills() -> None:
     )
 
     assert source.events() == ()
+
+
+def test_databento_source_infers_unsided_trade_from_sided_fill() -> None:
+    source = DatabentoMboSource(
+        [
+            DatabentoRecord(1, 11, "T", "N", 100_000_000_000, 2, 20, 0),
+            DatabentoRecord(1, 11, "F", "B", 100_000_000_000, 2, 10, 128),
+        ]
+    )
+
+    assert source.events() == (
+        MBOEvent(
+            ts_ns=1,
+            action="trade",
+            side="bid",
+            price=Decimal("100.000000000"),
+            size=2,
+            order_id=20,
+        ),
+    )
+
+
+def test_databento_source_ignores_trade_without_usable_resting_side() -> None:
+    source = DatabentoMboSource(
+        [DatabentoRecord(1, 11, "T", "N", 100_000_000_000, 2, 20, 128)]
+    )
+
+    assert source.events() == ()
+
+
+def test_databento_source_inverts_buy_aggressor_to_ask_trade() -> None:
+    source = DatabentoMboSource(
+        [DatabentoRecord(1, 11, "T", "B", 101_000_000_000, 2, 20, 128)]
+    )
+
+    assert source.events() == (
+        MBOEvent(
+            ts_ns=1,
+            action="trade",
+            side="ask",
+            price=Decimal("101.000000000"),
+            size=2,
+            order_id=20,
+        ),
+    )
 
 
 def test_databento_source_rejects_aggregated_records() -> None:
