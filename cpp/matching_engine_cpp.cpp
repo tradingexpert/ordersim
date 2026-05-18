@@ -12,17 +12,17 @@ const T* checked_buffer(
     const py::buffer& buffer,
     const std::string& expected_format,
     const char* name,
-    ssize_t expected_size = -1
+    py::ssize_t expected_size = -1
 ) {
     const py::buffer_info info = buffer.request();
     if (info.ndim != 1) {
         throw py::value_error(std::string(name) + " must be one-dimensional");
     }
-    if (info.itemsize != static_cast<ssize_t>(sizeof(T))
+    if (info.itemsize != static_cast<py::ssize_t>(sizeof(T))
         || info.format != expected_format) {
         throw py::value_error(std::string(name) + " has the wrong dtype");
     }
-    if (info.strides[0] != static_cast<ssize_t>(sizeof(T))) {
+    if (info.strides[0] != static_cast<py::ssize_t>(sizeof(T))) {
         throw py::value_error(std::string(name) + " must be contiguous");
     }
     if (expected_size >= 0 && info.shape[0] != expected_size) {
@@ -44,15 +44,15 @@ std::vector<FillRow> apply_events_batch(
     if (ts_info.ndim != 1) {
         throw py::value_error("ts_ns must be one-dimensional");
     }
-    if (ts_info.itemsize != static_cast<ssize_t>(sizeof(int64_t))
+    if (ts_info.itemsize != static_cast<py::ssize_t>(sizeof(int64_t))
         || ts_info.format != py::format_descriptor<int64_t>::format()) {
         throw py::value_error("ts_ns has the wrong dtype");
     }
-    if (ts_info.strides[0] != static_cast<ssize_t>(sizeof(int64_t))) {
+    if (ts_info.strides[0] != static_cast<py::ssize_t>(sizeof(int64_t))) {
         throw py::value_error("ts_ns must be contiguous");
     }
 
-    const ssize_t n = ts_info.shape[0];
+    const py::ssize_t n = ts_info.shape[0];
     const auto* ts_data = static_cast<const int64_t*>(ts_info.ptr);
     const auto* action_data = checked_buffer<uint8_t>(
         action,
@@ -87,7 +87,7 @@ std::vector<FillRow> apply_events_batch(
 
     std::vector<FillRow> fills;
 
-    for (ssize_t i = 0; i < n; ++i) {
+    for (py::ssize_t i = 0; i < n; ++i) {
         const auto event_fills = engine.apply_event_code(
             ts_data[i],
             static_cast<char>(action_data[i]),
