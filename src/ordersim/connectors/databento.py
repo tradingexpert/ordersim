@@ -60,11 +60,28 @@ class DatabentoMboSource:
                 if _as_char(_field(record, "action")) == "F"
                 and _as_char(_field(record, "side")) in ("A", "B")
             }
+            sided_fill_sides = {
+                _as_char(_field(record, "side"))
+                for record in group
+                if _as_char(_field(record, "action")) == "F"
+                and _as_char(_field(record, "side")) in ("A", "B")
+            }
+            has_usable_trade = any(
+                _as_char(_field(record, "action")) == "T"
+                and _trade_book_side(
+                    _as_char(_field(record, "side")),
+                    sided_fill_sides=sided_fill_sides,
+                )
+                is not None
+                for record in group
+            )
             for record in group:
                 event, visible_book_event = _normalize_record(
                     record,
                     timestamp_field=self.timestamp_field,
                     paired_fill_order_ids=paired_fill_order_ids,
+                    sided_fill_sides=sided_fill_sides,
+                    use_trade_records=has_usable_trade,
                     allow_leading_clear=not saw_visible_book_event,
                 )
                 if visible_book_event:
@@ -92,6 +109,8 @@ def _normalize_record(
     *,
     timestamp_field: TimestampField,
     paired_fill_order_ids: set[int],
+    sided_fill_sides: set[str],
+    use_trade_records: bool,
     allow_leading_clear: bool,
 ) -> tuple[MBOEvent | None, bool]:
     flags = _as_int(_field(record, "flags"))
@@ -102,13 +121,28 @@ def _normalize_record(
     side = _as_char(_field(record, "side"))
     order_id = _as_int(_field(record, "order_id"))
 
-    if action in ("T", "N"):
+    if action == "T":
+        trade_side = _trade_book_side(side, sided_fill_sides=sided_fill_sides)
+        if trade_side is None:
+            return None, False
+        return (
+            _event_from_record(
+                record,
+                timestamp_field=timestamp_field,
+                action="trade",
+                side=trade_side,
+            ),
+            False,
+        )
+    if action == "N":
         return None, False
     if action == "R":
         if allow_leading_clear:
             return None, False
         raise ValueError("mid-stream Databento clear events are not supported")
     if action == "F":
+        if use_trade_records:
+            return None, False
         if side == "N":
             return None, False
         return (
@@ -162,6 +196,20 @@ def _book_side(side: str) -> BookSide:
     if side == "B":
         return "bid"
     raise ValueError(f"unsupported Databento side: {side!r}")
+
+
+def _trade_book_side(
+    aggressor_side: str,
+    *,
+    sided_fill_sides: set[str],
+) -> BookSide | None:
+    if aggressor_side == "A":
+        return "bid"
+    if aggressor_side == "B":
+        return "ask"
+    if aggressor_side == "N" and len(sided_fill_sides) == 1:
+        return _book_side(next(iter(sided_fill_sides)))
+    return None
 
 
 def _field(record: DatabentoRecordInput, name: str) -> Any:
