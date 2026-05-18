@@ -8,6 +8,7 @@ from ordersim import (
     MBOEvent,
     cpp_execution_engine_available,
 )
+from ordersim.replay.compiled_events import CompiledEventColumns
 from ordersim.sim import cpp_matching_engine
 from ordersim.testing import assert_execution_equivalence_suite
 
@@ -85,3 +86,62 @@ def test_cpp_execution_engine_exposes_decimal_book_state() -> None:
     bids, asks = engine.book_depth(1)
     assert bids[0].price == Decimal("100.00")
     assert asks[0].price == Decimal("101.00")
+
+
+def test_cpp_execution_engine_applies_compiled_event_batches() -> None:
+    events = (
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="bid",
+            price=Decimal("100.0"),
+            size=1,
+            order_id=1,
+        ),
+        MBOEvent(
+            ts_ns=2,
+            action="add",
+            side="ask",
+            price=Decimal("101.0"),
+            size=1,
+            order_id=2,
+        ),
+        MBOEvent(
+            ts_ns=3,
+            action="trade",
+            side="bid",
+            price=Decimal("100.0"),
+            size=2,
+            order_id=3,
+        ),
+    )
+    columns = CompiledEventColumns.from_events(events, tick_size=Decimal("0.10"))
+    engine = CppMatchingEngine(tick_size=Decimal("0.10"))
+
+    resting = engine.place_limit(side="buy", price=Decimal("100.0"), size=1)
+    fills = engine.apply_events_batch(columns.slice(0, len(events)))
+
+    assert resting.order_id is not None
+    fill_rows = [
+        (fill.order_id, fill.side, fill.price, fill.size, fill.ts_ns)
+        for fill in fills
+    ]
+    assert fill_rows == [
+        (resting.order_id, "buy", Decimal("100.00"), 1, 3),
+    ]
+
+
+def test_compiled_event_columns_reject_unaligned_prices() -> None:
+    events = (
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="ask",
+            price=Decimal("101.05"),
+            size=1,
+            order_id=1,
+        ),
+    )
+
+    with pytest.raises(ValueError, match="not aligned"):
+        CompiledEventColumns.from_events(events, tick_size=Decimal("0.10"))

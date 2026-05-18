@@ -82,6 +82,20 @@ strategy has isolated order state while sharing the same immutable event stream.
 stores integer ticks; the Python wrapper accepts an explicit `tick_size` so the
 public API remains exact-`Decimal`.
 
+For callers that already hold normalized events in memory, the wrapper also
+exposes a compiled batch-ingest path. It accepts primitive columns derived from
+the same `MBOEvent` schema and returns passive fills without changing the public
+matching semantics. Ordinary `Replay(...)` still applies one event at a time so
+it can record the per-event valuation marks that build the default equity curve.
+
+```python
+from ordersim import CompiledEventColumns, CppMatchingEngine
+
+columns = CompiledEventColumns.from_events(events, tick_size=spec.tick_size)
+engine = CppMatchingEngine(tick_size=spec.tick_size)
+fills = engine.apply_events_batch(columns.slice(0, len(events)))
+```
+
 Install a source checkout normally to build the extension:
 
 ```bash

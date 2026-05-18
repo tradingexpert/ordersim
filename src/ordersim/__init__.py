@@ -31,7 +31,7 @@ from ordersim.latency import (
     default_latency_model_factory,
 )
 from ordersim.recording import RecordingGateway
-from ordersim.replay import Replay, ReplayGateway, ReplayResult
+from ordersim.replay import CompiledEventColumns, Replay, ReplayGateway, ReplayResult
 from ordersim.sim import (
     CppMatchingEngine,
     ExecutionEngine,
@@ -59,6 +59,7 @@ from ordersim.types import (
 
 __all__ = [
     "BookSide",
+    "CompiledEventColumns",
     "ConstantLatency",
     "CppMatchingEngine",
     "CsvSource",
