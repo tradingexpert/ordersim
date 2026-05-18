@@ -40,6 +40,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/latency.py` | Latency model contracts and reference models | Yes |
 | `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Yes |
 | `ordersim/testing/` | Public helpers for extension tests | Public |
+| `benchmarks/` | Narrow public performance measurements | Public |
 | `ordersim/replay/factory.py` | Builds feed, venue, OMS, portfolio | Planned internal |
 | `ordersim/sim/execution.py` | Execution engine protocol | Yes |
 | `ordersim/sim/cpp_matching_engine.py` | Optional C++ engine wrapper | Yes |

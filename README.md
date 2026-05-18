@@ -275,6 +275,7 @@ Planned next milestones:
 - Connectors: `docs/connectors.md`
 - Releasing: `docs/releasing.md`
 - Engineering standards: `docs/engineering-standards.md`
+- Benchmarks: `docs/benchmarks.md`
 - Example: `examples/canonical.py`
 - Schema reference: `docs/schema.md`
 - AI agent guide: `AGENTS.md`

@@ -112,6 +112,11 @@ low-level engine regressions before Python enters the picture; the replay
 equivalence suite is still required because native tests alone cannot prove the
 public API remains identical.
 
+For a raw hot-loop comparison between the Python and C++ engines, run
+`benchmarks/execution_engine_throughput.py`. That benchmark intentionally
+measures only `apply_event(...)`; replay and `run_many(...)` belong in separate
+benchmarks because they answer different questions.
+
 ## Equivalence Harness
 
 Compiled or alternative execution engines must prove replay equivalence against
