@@ -5,6 +5,105 @@
 
 namespace py = pybind11;
 
+namespace {
+
+template <typename T>
+const T* checked_buffer(
+    const py::buffer& buffer,
+    const std::string& expected_format,
+    const char* name,
+    ssize_t expected_size = -1
+) {
+    const py::buffer_info info = buffer.request();
+    if (info.ndim != 1) {
+        throw py::value_error(std::string(name) + " must be one-dimensional");
+    }
+    if (info.itemsize != static_cast<ssize_t>(sizeof(T))
+        || info.format != expected_format) {
+        throw py::value_error(std::string(name) + " has the wrong dtype");
+    }
+    if (info.strides[0] != static_cast<ssize_t>(sizeof(T))) {
+        throw py::value_error(std::string(name) + " must be contiguous");
+    }
+    if (expected_size >= 0 && info.shape[0] != expected_size) {
+        throw py::value_error("batch columns must have equal length");
+    }
+    return static_cast<const T*>(info.ptr);
+}
+
+std::vector<FillRow> apply_events_batch(
+    MatchingEngineCpp& engine,
+    const py::buffer& ts_ns,
+    const py::buffer& action,
+    const py::buffer& side,
+    const py::buffer& price_ticks,
+    const py::buffer& size,
+    const py::buffer& order_id
+) {
+    const py::buffer_info ts_info = ts_ns.request();
+    if (ts_info.ndim != 1) {
+        throw py::value_error("ts_ns must be one-dimensional");
+    }
+    if (ts_info.itemsize != static_cast<ssize_t>(sizeof(int64_t))
+        || ts_info.format != py::format_descriptor<int64_t>::format()) {
+        throw py::value_error("ts_ns has the wrong dtype");
+    }
+    if (ts_info.strides[0] != static_cast<ssize_t>(sizeof(int64_t))) {
+        throw py::value_error("ts_ns must be contiguous");
+    }
+
+    const ssize_t n = ts_info.shape[0];
+    const auto* ts_data = static_cast<const int64_t*>(ts_info.ptr);
+    const auto* action_data = checked_buffer<uint8_t>(
+        action,
+        py::format_descriptor<uint8_t>::format().c_str(),
+        "action",
+        n
+    );
+    const auto* side_data = checked_buffer<uint8_t>(
+        side,
+        py::format_descriptor<uint8_t>::format().c_str(),
+        "side",
+        n
+    );
+    const auto* price_data = checked_buffer<int64_t>(
+        price_ticks,
+        py::format_descriptor<int64_t>::format().c_str(),
+        "price_ticks",
+        n
+    );
+    const auto* size_data = checked_buffer<int32_t>(
+        size,
+        py::format_descriptor<int32_t>::format().c_str(),
+        "size",
+        n
+    );
+    const auto* order_data = checked_buffer<int64_t>(
+        order_id,
+        py::format_descriptor<int64_t>::format().c_str(),
+        "order_id",
+        n
+    );
+
+    std::vector<FillRow> fills;
+
+    for (ssize_t i = 0; i < n; ++i) {
+        const auto event_fills = engine.apply_event_code(
+            ts_data[i],
+            static_cast<char>(action_data[i]),
+            static_cast<char>(side_data[i]),
+            price_data[i],
+            size_data[i],
+            order_data[i]
+        );
+        fills.insert(fills.end(), event_fills.begin(), event_fills.end());
+    }
+
+    return fills;
+}
+
+}  // namespace
+
 PYBIND11_MODULE(_matching_engine_cpp, module) {
     py::class_<FillRow>(module, "FillRow")
         .def_readonly("order_id", &FillRow::order_id)
@@ -16,6 +115,7 @@ PYBIND11_MODULE(_matching_engine_cpp, module) {
     py::class_<MatchingEngineCpp>(module, "MatchingEngineCpp")
         .def(py::init<>())
         .def("apply_event", &MatchingEngineCpp::apply_event)
+        .def("apply_events_batch", &apply_events_batch)
         .def("place_limit", &MatchingEngineCpp::place_limit)
         .def("place_market", &MatchingEngineCpp::place_market)
         .def("cancel", &MatchingEngineCpp::cancel)

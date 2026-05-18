@@ -3,6 +3,7 @@
 from decimal import Decimal
 from typing import Any
 
+from ordersim.replay.compiled_events import CompiledEventSlice
 from ordersim.sim.matching_engine import PriceLevel
 from ordersim.types import (
     Fill,
@@ -33,6 +34,22 @@ class CppMatchingEngine:
             self._price_to_ticks(event.price),
             event.size,
             event.order_id,
+        )
+        return [self._fill_from_row(row) for row in rows]
+
+    def apply_events_batch(
+        self,
+        events: CompiledEventSlice,
+    ) -> list[Fill]:
+        """Apply one compiled event slice and return passive fills."""
+
+        rows = self._core.apply_events_batch(
+            events.ts_ns,
+            events.action,
+            events.side,
+            events.price_ticks,
+            events.size,
+            events.order_id,
         )
         return [self._fill_from_row(row) for row in rows]
 
@@ -141,8 +158,8 @@ def _load_cpp_module() -> Any:
         from ordersim import _matching_engine_cpp
     except ImportError as exc:
         raise ImportError(
-            "ordersim C++ engine is not built; run "
-            "`python setup_cpp.py build_ext --inplace` first"
+            "ordersim C++ engine is not built; install the project normally "
+            'with `python -m pip install -e ".[dev]"` first'
         ) from exc
     return _matching_engine_cpp
 

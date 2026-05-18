@@ -41,16 +41,34 @@ public:
         int32_t size,
         int64_t order_id
     ) {
+        return apply_event_code(
+            ts_ns,
+            action_code(action),
+            side,
+            price_ticks,
+            size,
+            order_id
+        );
+    }
+
+    std::vector<FillRow> apply_event_code(
+        int64_t ts_ns,
+        char action,
+        char side,
+        int64_t price_ticks,
+        int32_t size,
+        int64_t order_id
+    ) {
         now_ns_ = ts_ns;
         const size_t before = passive_fills_.size();
 
-        if (action == "add") {
+        if (action == 'A') {
             add_public(order_id, side, price_ticks, size);
-        } else if (action == "cancel") {
+        } else if (action == 'C') {
             cancel_public(order_id, side, price_ticks, size);
-        } else if (action == "modify") {
+        } else if (action == 'M') {
             modify_public(order_id, side, price_ticks, size);
-        } else if (action == "trade") {
+        } else if (action == 'T') {
             consume_level(side, price_ticks, size, ts_ns);
         } else {
             throw std::runtime_error("unknown MBO action");
@@ -187,6 +205,14 @@ private:
     int64_t position_ = 0;
 
     static constexpr int64_t missing_price() { return -1; }
+
+    static char action_code(const std::string& action) {
+        if (action == "add") return 'A';
+        if (action == "cancel") return 'C';
+        if (action == "modify") return 'M';
+        if (action == "trade") return 'T';
+        throw std::runtime_error("unknown MBO action");
+    }
 
     static void validate_order(int32_t size, int64_t price_ticks) {
         if (size <= 0) throw std::runtime_error("size must be positive");
