@@ -1,5 +1,6 @@
 """Small replay runner built around the reference matching engine."""
 
+from bisect import bisect_right
 from collections.abc import Callable, MutableSequence
 from dataclasses import dataclass
 from typing import Any
@@ -99,6 +100,7 @@ class ReplayGateway:
         compiled_events: CompiledEventColumns | None = None,
     ) -> None:
         self._events = events
+        self._event_timestamps = tuple(event.ts_ns for event in events)
         self._compiled_events = compiled_events
         self._engine = engine or python_execution_engine_factory()
         self._latency_model = latency_model or default_latency_model_factory()
@@ -126,14 +128,10 @@ class ReplayGateway:
             raise ValueError("cannot move replay time backwards")
 
         fills: list[Fill] = []
-        while (
-            self._cursor < len(self._events)
-            and self._events[self._cursor].ts_ns <= ts_ns
-        ):
-            event = self._events[self._cursor]
-            fills.extend(self._engine.apply_event(event))
-            self._cursor += 1
-            self._record_valuation_mark(event.ts_ns)
+        stop = bisect_right(self._event_timestamps, ts_ns, lo=self._cursor)
+        if stop > self._cursor:
+            fills.extend(self._advance_events(self._cursor, stop))
+            self._cursor = stop
 
         self._now_ns = ts_ns
         self._engine.advance_time(ts_ns)
@@ -203,6 +201,19 @@ class ReplayGateway:
     def _advance_to_venue_receipt(self) -> None:
         sample = self._latency_model.sample(self._now_ns)
         self.advance_to(self._now_ns + sample.entry_ns)
+
+    def _advance_events(self, start: int, stop: int) -> list[Fill]:
+        apply_compiled = getattr(self._engine, "apply_events_batch_with_marks", None)
+        if self._compiled_events is not None and apply_compiled is not None:
+            fills, marks = apply_compiled(self._compiled_events.slice(start, stop))
+            self._valuation_marks.extend(marks)
+            return list(fills)
+
+        fills: list[Fill] = []
+        for event in self._events[start:stop]:
+            fills.extend(self._engine.apply_event(event))
+            self._record_valuation_mark(event.ts_ns)
+        return fills
 
     def _record_valuation_mark(self, ts_ns: int) -> None:
         bid, ask = self._engine.book_top()

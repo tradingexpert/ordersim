@@ -36,7 +36,7 @@ class BenchmarkResult:
 
 
 def run_scalar(engine: ExecutionEngine, events: Sequence[MBOEvent]) -> None:
-    """Apply one event at a time through the public scalar engine API."""
+    """Apply one event at a time through the public compatibility API."""
 
     for event in events:
         engine.apply_event(event)
@@ -137,7 +137,7 @@ def main() -> None:
         return
 
     cpp_scalar = measure(
-        "CppMatchingEngine scalar",
+        "CppMatchingEngine per-event",
         lambda: run_scalar(CppMatchingEngine(tick_size=TICK_SIZE), events),
         event_count=len(events),
         repeats=args.repeats,
@@ -158,8 +158,8 @@ def main() -> None:
     python_eps = results[0].events_per_second
     scalar_speedup = cpp_scalar.events_per_second / python_eps
     batch_speedup = cpp_batch.events_per_second / python_eps
-    print(f"scalar C++ speedup vs Python  {scalar_speedup:>7.2f}x")
-    print(f"batch C++ speedup vs Python   {batch_speedup:>7.2f}x")
+    print(f"per-event C++ speedup vs Python  {scalar_speedup:>7.2f}x")
+    print(f"batch C++ speedup vs Python      {batch_speedup:>7.2f}x")
 
 
 if __name__ == "__main__":

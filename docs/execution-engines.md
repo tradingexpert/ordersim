@@ -88,8 +88,8 @@ public API remains exact-`Decimal`.
 For callers that already hold normalized events in memory, the wrapper also
 exposes a compiled batch-ingest path. It accepts primitive columns derived from
 the same `MBOEvent` schema and returns passive fills without changing the public
-matching semantics. Ordinary `Replay(...)` still applies one event at a time so
-it can record the per-event valuation marks that build the default equity curve.
+matching semantics. Ordinary `Replay(...)` uses the compiled batch path when it
+can also receive the valuation marks needed to build the default equity curve.
 `Replay(...)` precompiles its immutable event stream once and shares that column
 view with each strategy run, so future compiled replay paths do not need to
 rebuild primitive columns inside `run_many(...)`.

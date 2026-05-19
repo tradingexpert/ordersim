@@ -131,6 +131,50 @@ def test_cpp_execution_engine_applies_compiled_event_batches() -> None:
     ]
 
 
+def test_cpp_execution_engine_applies_compiled_batches_with_marks() -> None:
+    events = (
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="bid",
+            price=Decimal("100.0"),
+            size=1,
+            order_id=1,
+        ),
+        MBOEvent(
+            ts_ns=2,
+            action="add",
+            side="ask",
+            price=Decimal("101.0"),
+            size=1,
+            order_id=2,
+        ),
+        MBOEvent(
+            ts_ns=3,
+            action="trade",
+            side="bid",
+            price=Decimal("100.0"),
+            size=2,
+            order_id=3,
+        ),
+    )
+    columns = CompiledEventColumns.from_events(events, tick_size=Decimal("0.10"))
+    engine = CppMatchingEngine(tick_size=Decimal("0.10"))
+
+    resting = engine.place_limit(side="buy", price=Decimal("100.0"), size=1)
+    fills, marks = engine.apply_events_batch_with_marks(
+        columns.slice(0, len(events))
+    )
+
+    assert resting.order_id is not None
+    assert [(fill.order_id, fill.price, fill.ts_ns) for fill in fills] == [
+        (resting.order_id, Decimal("100.00"), 3),
+    ]
+    assert [(mark.ts_ns, mark.price) for mark in marks] == [
+        (2, Decimal("100.50")),
+    ]
+
+
 def test_cpp_execution_engine_stops_compiled_batch_at_passive_fill() -> None:
     events = (
         MBOEvent(

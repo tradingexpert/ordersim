@@ -12,6 +12,7 @@ from ordersim import (
     Replay,
     ReplayGateway,
     RestingOrder,
+    ValuationMark,
 )
 from ordersim.fixtures.synthetic import SyntheticSource
 from ordersim.replay import simulator as replay_simulator
@@ -119,6 +120,70 @@ def test_replay_compiles_immutable_stream_once_for_run_many(monkeypatch) -> None
     )
 
     assert calls == 1
+
+
+def test_replay_uses_compiled_batch_path_when_engine_supports_it() -> None:
+    class BatchEngine:
+        def __init__(self) -> None:
+            self.batch_calls = 0
+            self.last_advanced_to = 0
+
+        def apply_events_batch_with_marks(self, events):
+            self.batch_calls += 1
+            return [], [
+                ValuationMark(ts_ns=int(ts_ns), price=Decimal("100.5"))
+                for ts_ns in events.ts_ns
+            ]
+
+        def apply_event(self, event):
+            raise AssertionError("scalar event path should not be used")
+
+        def advance_time(self, ts_ns: int) -> None:
+            self.last_advanced_to = ts_ns
+
+        def place_limit(self, side, price, size, tif="GTC"):
+            raise AssertionError("order placement is not used in this test")
+
+        def place_market(self, side, size):
+            raise AssertionError("order placement is not used in this test")
+
+        def cancel(self, order_id):
+            raise AssertionError("order cancellation is not used in this test")
+
+        def book_top(self):
+            return Decimal("100.0"), Decimal("101.0")
+
+        def book_depth(self, levels):
+            return (), ()
+
+        def position(self):
+            return 0
+
+        def own_orders(self):
+            return ()
+
+    created: list[BatchEngine] = []
+
+    def factory() -> BatchEngine:
+        engine = BatchEngine()
+        created.append(engine)
+        return engine
+
+    replay = Replay(
+        data=SyntheticSource.small_mbo(),
+        instrument=gc_spec(),
+        execution_engine_factory=factory,
+    )
+
+    def strategy(gateway) -> None:
+        gateway.advance_to(1_000_000_200)
+
+    result = replay.run(strategy)
+
+    assert len(created) == 1
+    assert created[0].batch_calls == 1
+    assert created[0].last_advanced_to == 1_000_000_200
+    assert result.equity_curve[-1].mark_price == Decimal("100.5")
 
 
 def test_replay_gateway_exposes_book_depth() -> None:
