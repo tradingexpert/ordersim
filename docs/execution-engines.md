@@ -99,6 +99,23 @@ engine = CppMatchingEngine(tick_size=spec.tick_size)
 fills = engine.apply_events_batch(columns.slice(0, len(events)))
 ```
 
+The wrapper also exposes `apply_events_until_fill(...)`, which is the first
+low-level primitive for boundary-batched replay. It lets the C++ engine consume
+a compiled market-data slice independently until either the slice ends or a
+passive fill occurs. The method returns both the number of events consumed and
+the fills produced at the boundary, so a future replay loop can resume Python at
+the exact point where strategy-visible execution state changed.
+
+```python
+events_consumed, fills = engine.apply_events_until_fill(
+    columns.slice(start, stop),
+)
+```
+
+This primitive does not change ordinary audited `Replay(...)` yet. It exists so
+the faster path can be wired in carefully without weakening replay
+inspectability.
+
 Install a source checkout normally to build the extension:
 
 ```bash

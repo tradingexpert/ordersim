@@ -131,6 +131,87 @@ def test_cpp_execution_engine_applies_compiled_event_batches() -> None:
     ]
 
 
+def test_cpp_execution_engine_stops_compiled_batch_at_passive_fill() -> None:
+    events = (
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="bid",
+            price=Decimal("100.0"),
+            size=1,
+            order_id=1,
+        ),
+        MBOEvent(
+            ts_ns=2,
+            action="trade",
+            side="bid",
+            price=Decimal("100.0"),
+            size=2,
+            order_id=2,
+        ),
+        MBOEvent(
+            ts_ns=3,
+            action="add",
+            side="ask",
+            price=Decimal("101.0"),
+            size=1,
+            order_id=3,
+        ),
+    )
+    columns = CompiledEventColumns.from_events(events, tick_size=Decimal("0.10"))
+    engine = CppMatchingEngine(tick_size=Decimal("0.10"))
+
+    resting = engine.place_limit(side="buy", price=Decimal("100.0"), size=1)
+    events_applied, fills = engine.apply_events_until_fill(
+        columns.slice(0, len(events))
+    )
+
+    assert resting.order_id is not None
+    assert events_applied == 2
+    assert [(fill.order_id, fill.ts_ns, fill.size) for fill in fills] == [
+        (resting.order_id, 2, 1),
+    ]
+    assert engine.book_top() == (None, None)
+
+    remaining_fills = engine.apply_events_batch(
+        columns.slice(events_applied, len(events))
+    )
+
+    assert remaining_fills == []
+    assert engine.book_top() == (None, Decimal("101.00"))
+
+
+def test_cpp_execution_engine_reports_full_batch_without_passive_fill() -> None:
+    events = (
+        MBOEvent(
+            ts_ns=1,
+            action="add",
+            side="bid",
+            price=Decimal("100.0"),
+            size=1,
+            order_id=1,
+        ),
+        MBOEvent(
+            ts_ns=2,
+            action="add",
+            side="ask",
+            price=Decimal("101.0"),
+            size=1,
+            order_id=2,
+        ),
+    )
+    columns = CompiledEventColumns.from_events(events, tick_size=Decimal("0.10"))
+    engine = CppMatchingEngine(tick_size=Decimal("0.10"))
+
+    events_applied, fills = engine.apply_events_until_fill(
+        columns.slice(0, len(events))
+    )
+
+    assert events_applied == len(events)
+    assert fills == []
+    assert engine.book_top() == (Decimal("100.00"), Decimal("101.00"))
+
+
 def test_compiled_event_columns_reject_unaligned_prices() -> None:
     events = (
         MBOEvent(
