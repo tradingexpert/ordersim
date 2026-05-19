@@ -116,6 +116,12 @@ This primitive does not change ordinary audited `Replay(...)` yet. It exists so
 the faster path can be wired in carefully without weakening replay
 inspectability.
 
+`advance_until_fill_boundary(...)` is the Python-side helper that wraps this
+idea. It uses the compiled boundary method when the engine and columns support
+it, and otherwise falls back to scalar `apply_event(...)` calls. That lets tests
+prove the same boundary behavior through the readable Python path and the C++
+path before replay integration depends on it.
+
 Install a source checkout normally to build the extension:
 
 ```bash

@@ -31,7 +31,14 @@ from ordersim.latency import (
     default_latency_model_factory,
 )
 from ordersim.recording import RecordingGateway
-from ordersim.replay import CompiledEventColumns, Replay, ReplayGateway, ReplayResult
+from ordersim.replay import (
+    BoundaryAdvance,
+    CompiledEventColumns,
+    Replay,
+    ReplayGateway,
+    ReplayResult,
+    advance_until_fill_boundary,
+)
 from ordersim.sim import (
     CppMatchingEngine,
     ExecutionEngine,
@@ -59,6 +66,7 @@ from ordersim.types import (
 
 __all__ = [
     "BookSide",
+    "BoundaryAdvance",
     "CompiledEventColumns",
     "ConstantLatency",
     "CppMatchingEngine",
@@ -99,6 +107,7 @@ __all__ = [
     "Side",
     "TimeInForce",
     "ValuationMark",
+    "advance_until_fill_boundary",
     "build_equity_curve",
     "cpp_execution_engine_available",
     "default_execution_engine_factory",
