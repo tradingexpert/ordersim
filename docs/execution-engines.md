@@ -90,6 +90,8 @@ exposes a compiled batch-ingest path. It accepts primitive columns derived from
 the same `MBOEvent` schema and returns passive fills without changing the public
 matching semantics. Ordinary `Replay(...)` uses the compiled batch path when it
 can also receive the valuation marks needed to build the default equity curve.
+Those marks are transported as compact timestamp and midpoint-tick columns, not
+one Python object per market-data event.
 `Replay(...)` precompiles its immutable event stream once and shares that column
 view with each strategy run, so future compiled replay paths do not need to
 rebuild primitive columns inside `run_many(...)`.

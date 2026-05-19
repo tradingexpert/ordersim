@@ -109,6 +109,16 @@ See `docs/economics.md` for the assumptions and explicit non-goals.
 | `ts_ns` | `int` | Mark timestamp as UTC Unix-epoch nanoseconds. |
 | `price` | `Decimal` | Price used for open-lot valuation. |
 
+`CompiledValuationMarks` is the compact internal form used by the C++ replay
+path. It stores mark timestamps and midpoint prices as primitive integer
+columns:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ts_ns` | `memoryview[int64]` | Mark timestamps as UTC Unix-epoch nanoseconds. |
+| `mid_ticks_x2` | `memoryview[int64]` | `bid_ticks + ask_ticks`, preserving half-tick midpoints exactly. |
+| `tick_size` | `Decimal` | Price multiplier used when public `Decimal` prices are built. |
+
 `EquityPoint` is one output row from a mark-to-market equity curve.
 
 | Field | Type | Meaning |

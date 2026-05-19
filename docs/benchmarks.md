@@ -34,10 +34,13 @@ This benchmark measures event ingestion through the execution engine itself:
 | `MatchingEngine` scalar | `apply_event(MBOEvent)` on the Python reference engine |
 | `CppMatchingEngine` per-event | `apply_event(MBOEvent)` one event at a time for compatibility checks |
 | `CppMatchingEngine` batch | `apply_events_batch(...)` over precompiled primitive columns |
+| `CppMatchingEngine` batch+marks | `apply_events_batch_with_marks(...)`, returning fills plus compact valuation-mark columns |
 
 The per-event C++ number is a diagnostic baseline, not the intended fast path.
 The useful compiled path is batched: Python hands C++ a contiguous slice and C++
-advances internally.
+advances internally. The `batch+marks` path is the closest engine-level
+measurement to ordinary audited replay because replay needs valuation marks for
+the equity curve.
 
 The batch result excludes `CompiledEventColumns.from_events(...)` construction.
 That conversion is meant to happen once before repeated compiled-engine runs;
@@ -67,8 +70,10 @@ also performs the work that makes `ordersim` inspectable:
 
 When the default C++ engine is available, ordinary replay advances each requested
 time slice through compiled columns and returns both fills and valuation marks.
-The Python reference engine remains event-by-event because it is the readable
-behavioral model.
+Those valuation marks are carried back as compact integer columns
+(`ts_ns[]`, `mid_ticks_x2[]`) and converted to public `Decimal` prices only when
+the equity curve is built. The Python reference engine remains event-by-event
+because it is the readable behavioral model.
 
 ## Interpreting Results
 

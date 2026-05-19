@@ -11,6 +11,7 @@ from ordersim.connectors import (
     write_parquet,
 )
 from ordersim.economics import (
+    CompiledValuationMarks,
     EquityPoint,
     ExecutionSummary,
     PositionLot,
@@ -68,6 +69,7 @@ __all__ = [
     "BookSide",
     "BoundaryAdvance",
     "CompiledEventColumns",
+    "CompiledValuationMarks",
     "ConstantLatency",
     "CppMatchingEngine",
     "CsvSource",

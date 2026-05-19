@@ -75,6 +75,12 @@ Replay builds `equity_curve` from observed fills and midpoint valuation marks.
 A midpoint mark is recorded when both bid and ask are available after replay
 applies a book event or order action.
 
+The C++ replay path transports those marks as compact integer columns and keeps
+midpoints as `bid_ticks + ask_ticks` until equity construction. Public
+`EquityPoint` values still expose `Decimal` prices; the compact representation
+only avoids creating an intermediate Python `ValuationMark` object for every
+market-data event.
+
 Replay only marks times it actually advances through. Full-session intraday
 drawdown therefore requires the strategy or harness to advance through the
 session window being studied, or to call `build_equity_curve(...)` directly with

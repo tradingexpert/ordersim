@@ -170,9 +170,9 @@ def test_cpp_execution_engine_applies_compiled_batches_with_marks() -> None:
     assert [(fill.order_id, fill.price, fill.ts_ns) for fill in fills] == [
         (resting.order_id, Decimal("100.00"), 3),
     ]
-    assert [(mark.ts_ns, mark.price) for mark in marks] == [
-        (2, Decimal("100.50")),
-    ]
+    assert list(marks.ts_ns) == [2]
+    assert list(marks.mid_ticks_x2) == [2010]
+    assert marks.tick_size == Decimal("0.10")
 
 
 def test_cpp_execution_engine_stops_compiled_batch_at_passive_fill() -> None:

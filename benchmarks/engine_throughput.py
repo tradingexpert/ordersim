@@ -48,6 +48,15 @@ def run_batch(engine: CppMatchingEngine, columns: CompiledEventColumns) -> None:
     engine.apply_events_batch(columns.slice(0, len(columns.ts_ns)))
 
 
+def run_batch_with_marks(
+    engine: CppMatchingEngine,
+    columns: CompiledEventColumns,
+) -> None:
+    """Apply one compiled event slice and return compact valuation marks."""
+
+    engine.apply_events_batch_with_marks(columns.slice(0, len(columns.ts_ns)))
+
+
 def measure(
     path_name: str,
     runner: Callable[[], None],
@@ -150,7 +159,17 @@ def main() -> None:
         repeats=args.repeats,
         warmups=args.warmups,
     )
-    results.extend((cpp_scalar, cpp_batch))
+    cpp_batch_marks = measure(
+        "CppMatchingEngine batch+marks",
+        lambda: run_batch_with_marks(
+            CppMatchingEngine(tick_size=TICK_SIZE),
+            columns,
+        ),
+        event_count=len(events),
+        repeats=args.repeats,
+        warmups=args.warmups,
+    )
+    results.extend((cpp_scalar, cpp_batch, cpp_batch_marks))
 
     for result in results[1:]:
         print(format_result(result))
@@ -158,8 +177,10 @@ def main() -> None:
     python_eps = results[0].events_per_second
     scalar_speedup = cpp_scalar.events_per_second / python_eps
     batch_speedup = cpp_batch.events_per_second / python_eps
+    batch_marks_speedup = cpp_batch_marks.events_per_second / python_eps
     print(f"per-event C++ speedup vs Python  {scalar_speedup:>7.2f}x")
     print(f"batch C++ speedup vs Python      {batch_speedup:>7.2f}x")
+    print(f"batch+marks speedup vs Python    {batch_marks_speedup:>7.2f}x")
 
 
 if __name__ == "__main__":

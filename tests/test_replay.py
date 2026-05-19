@@ -3,6 +3,7 @@ from decimal import Decimal
 import pytest
 
 from ordersim import (
+    CompiledValuationMarks,
     ConstantLatency,
     EmpiricalPlayback,
     InstrumentSpec,
@@ -12,11 +13,16 @@ from ordersim import (
     Replay,
     ReplayGateway,
     RestingOrder,
-    ValuationMark,
 )
 from ordersim.fixtures.synthetic import SyntheticSource
 from ordersim.replay import simulator as replay_simulator
 from ordersim.types import OrderEvent
+
+
+def int64_bytes(values: tuple[int, ...]) -> bytes:
+    from array import array
+
+    return array("q", values).tobytes()
 
 
 def gc_spec() -> InstrumentSpec:
@@ -130,10 +136,12 @@ def test_replay_uses_compiled_batch_path_when_engine_supports_it() -> None:
 
         def apply_events_batch_with_marks(self, events):
             self.batch_calls += 1
-            return [], [
-                ValuationMark(ts_ns=int(ts_ns), price=Decimal("100.5"))
-                for ts_ns in events.ts_ns
-            ]
+            mark_count = len(events.ts_ns)
+            return [], CompiledValuationMarks.from_bytes(
+                ts_ns=int64_bytes(tuple(int(ts_ns) for ts_ns in events.ts_ns)),
+                mid_ticks_x2=int64_bytes((2010,) * mark_count),
+                tick_size=Decimal("0.10"),
+            )
 
         def apply_event(self, event):
             raise AssertionError("scalar event path should not be used")
