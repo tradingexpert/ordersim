@@ -17,12 +17,6 @@ struct BatchBuffers {
     const int64_t* order_id;
 };
 
-struct MarkRow {
-    int64_t ts_ns;
-    int64_t bid_ticks;
-    int64_t ask_ticks;
-};
-
 template <typename T>
 const T* checked_buffer(
     const py::buffer& buffer,
@@ -104,6 +98,16 @@ BatchBuffers read_batch_buffers(
     };
 }
 
+py::bytes int64_bytes(const std::vector<int64_t>& values) {
+    if (values.empty()) {
+        return py::bytes();
+    }
+    return py::bytes(
+        reinterpret_cast<const char*>(values.data()),
+        values.size() * sizeof(int64_t)
+    );
+}
+
 std::vector<FillRow> apply_events_batch(
     MatchingEngineCpp& engine,
     const py::buffer& ts_ns,
@@ -158,7 +162,8 @@ py::tuple apply_events_batch_with_marks(
     );
 
     std::vector<FillRow> fills;
-    std::vector<MarkRow> marks;
+    std::vector<int64_t> mark_ts_ns;
+    std::vector<int64_t> mark_mid_ticks_x2;
 
     for (py::ssize_t i = 0; i < batch.n; ++i) {
         const auto event_fills = engine.apply_event_code(
@@ -173,11 +178,16 @@ py::tuple apply_events_batch_with_marks(
 
         const auto [bid_ticks, ask_ticks] = engine.book_top();
         if (bid_ticks >= 0 && ask_ticks >= 0) {
-            marks.push_back(MarkRow{batch.ts_ns[i], bid_ticks, ask_ticks});
+            mark_ts_ns.push_back(batch.ts_ns[i]);
+            mark_mid_ticks_x2.push_back(bid_ticks + ask_ticks);
         }
     }
 
-    return py::make_tuple(fills, marks);
+    return py::make_tuple(
+        fills,
+        int64_bytes(mark_ts_ns),
+        int64_bytes(mark_mid_ticks_x2)
+    );
 }
 
 py::tuple apply_events_until_fill(
@@ -227,11 +237,6 @@ PYBIND11_MODULE(_matching_engine_cpp, module) {
         .def_readonly("price_ticks", &FillRow::price_ticks)
         .def_readonly("size", &FillRow::size)
         .def_readonly("ts_ns", &FillRow::ts_ns);
-
-    py::class_<MarkRow>(module, "MarkRow")
-        .def_readonly("ts_ns", &MarkRow::ts_ns)
-        .def_readonly("bid_ticks", &MarkRow::bid_ticks)
-        .def_readonly("ask_ticks", &MarkRow::ask_ticks);
 
     py::class_<MatchingEngineCpp>(module, "MatchingEngineCpp")
         .def(py::init<>())

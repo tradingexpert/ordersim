@@ -7,9 +7,11 @@ from typing import Any
 
 from ordersim.connectors import EventInput, normalize_events
 from ordersim.economics import (
+    CompiledValuationMarks,
     EquityPoint,
     ExecutionSummary,
     ValuationMark,
+    ValuationMarkInput,
     build_equity_curve,
     summarize_fills,
 )
@@ -107,7 +109,7 @@ class ReplayGateway:
         self._cursor = 0
         self._now_ns = 0
         self._fills: list[Fill] = []
-        self._valuation_marks: list[ValuationMark] = []
+        self._valuation_marks: list[ValuationMark | CompiledValuationMarks] = []
 
     @property
     def fills(self) -> tuple[Fill, ...]:
@@ -116,7 +118,7 @@ class ReplayGateway:
         return tuple(self._fills)
 
     @property
-    def valuation_marks(self) -> tuple[ValuationMark, ...]:
+    def valuation_marks(self) -> ValuationMarkInput:
         """Midpoint valuation marks observed during replay."""
 
         return tuple(self._valuation_marks)
@@ -206,7 +208,8 @@ class ReplayGateway:
         apply_compiled = getattr(self._engine, "apply_events_batch_with_marks", None)
         if self._compiled_events is not None and apply_compiled is not None:
             fills, marks = apply_compiled(self._compiled_events.slice(start, stop))
-            self._valuation_marks.extend(marks)
+            if len(marks) > 0:
+                self._valuation_marks.append(marks)
             return list(fills)
 
         fills: list[Fill] = []

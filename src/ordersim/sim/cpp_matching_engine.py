@@ -3,7 +3,7 @@
 from decimal import Decimal
 from typing import Any
 
-from ordersim.economics import ValuationMark
+from ordersim.economics import CompiledValuationMarks
 from ordersim.replay.compiled_events import CompiledEventSlice
 from ordersim.sim.matching_engine import PriceLevel
 from ordersim.types import (
@@ -57,20 +57,26 @@ class CppMatchingEngine:
     def apply_events_batch_with_marks(
         self,
         events: CompiledEventSlice,
-    ) -> tuple[list[Fill], list[ValuationMark]]:
+    ) -> tuple[list[Fill], CompiledValuationMarks]:
         """Apply one compiled event slice and return fills plus midpoint marks."""
 
-        fill_rows, mark_rows = self._core.apply_events_batch_with_marks(
-            events.ts_ns,
-            events.action,
-            events.side,
-            events.price_ticks,
-            events.size,
-            events.order_id,
+        fill_rows, mark_ts_ns, mark_mid_ticks_x2 = (
+            self._core.apply_events_batch_with_marks(
+                events.ts_ns,
+                events.action,
+                events.side,
+                events.price_ticks,
+                events.size,
+                events.order_id,
+            )
         )
-        fills = [self._fill_from_row(row) for row in fill_rows]
-        marks = [self._valuation_mark_from_row(row) for row in mark_rows]
-        return fills, marks
+        return [self._fill_from_row(row) for row in fill_rows], (
+            CompiledValuationMarks.from_bytes(
+                ts_ns=mark_ts_ns,
+                mid_ticks_x2=mark_mid_ticks_x2,
+                tick_size=self._tick_size,
+            )
+        )
 
     def apply_events_until_fill(
         self,
@@ -175,16 +181,6 @@ class CppMatchingEngine:
             price=self._ticks_to_price(row.price_ticks),
             size=row.size,
             ts_ns=row.ts_ns,
-        )
-
-    def _valuation_mark_from_row(self, row: Any) -> ValuationMark:
-        return ValuationMark(
-            ts_ns=row.ts_ns,
-            price=(
-                self._ticks_to_price(row.bid_ticks)
-                + self._ticks_to_price(row.ask_ticks)
-            )
-            / 2,
         )
 
 

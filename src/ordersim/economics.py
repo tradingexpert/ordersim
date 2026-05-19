@@ -1,7 +1,9 @@
 """Execution economics computed directly from fills."""
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import TypeAlias
 
 from ordersim.specs import InstrumentSpec
 from ordersim.types import Fill, Price, Side
@@ -44,6 +46,38 @@ class ValuationMark:
 
 
 @dataclass(frozen=True, slots=True)
+class CompiledValuationMarks:
+    """Compact valuation marks stored as timestamp and midpoint tick columns.
+
+    `mid_ticks_x2` stores `bid_ticks + ask_ticks`, so half-tick midpoints stay
+    exact until the public `Decimal` equity curve is built.
+    """
+
+    ts_ns: memoryview
+    mid_ticks_x2: memoryview
+    tick_size: Decimal
+
+    @classmethod
+    def from_bytes(
+        cls,
+        *,
+        ts_ns: bytes,
+        mid_ticks_x2: bytes,
+        tick_size: Decimal,
+    ) -> "CompiledValuationMarks":
+        """Build compact marks from native int64 byte columns."""
+
+        timestamps = memoryview(ts_ns).cast("q")
+        mids = memoryview(mid_ticks_x2).cast("q")
+        if len(timestamps) != len(mids):
+            raise ValueError("valuation mark columns must have equal length")
+        return cls(ts_ns=timestamps, mid_ticks_x2=mids, tick_size=tick_size)
+
+    def __len__(self) -> int:
+        return len(self.ts_ns)
+
+
+@dataclass(frozen=True, slots=True)
 class EquityPoint:
     """One point on a mark-to-market equity curve."""
 
@@ -54,6 +88,13 @@ class EquityPoint:
     commission: Decimal
     equity: Decimal
     drawdown: Decimal
+
+
+ValuationMarkInput: TypeAlias = (
+    tuple[ValuationMark | CompiledValuationMarks, ...]
+    | list[ValuationMark | CompiledValuationMarks]
+    | CompiledValuationMarks
+)
 
 
 def summarize_fills(
@@ -102,7 +143,7 @@ def summarize_fills(
 
 def build_equity_curve(
     fills: tuple[Fill, ...] | list[Fill],
-    marks: tuple[ValuationMark, ...] | list[ValuationMark],
+    marks: ValuationMarkInput,
     instrument: InstrumentSpec,
 ) -> tuple[EquityPoint, ...]:
     """Build a mark-to-market equity curve from fills and valuation marks.
@@ -112,7 +153,14 @@ def build_equity_curve(
     """
 
     sorted_fills = tuple(sorted(fills, key=lambda fill: fill.ts_ns))
-    sorted_marks = tuple(sorted(marks, key=lambda mark: mark.ts_ns))
+    if isinstance(marks, CompiledValuationMarks):
+        return _build_equity_curve_from_compiled_marks(
+            sorted_fills,
+            marks,
+            instrument,
+        )
+
+    sorted_marks = tuple(sorted(_iter_mark_pairs(marks), key=lambda mark: mark[0]))
     open_lots: list[PositionLot] = []
     realized_pnl = Decimal("0")
     commission = Decimal("0")
@@ -120,23 +168,81 @@ def build_equity_curve(
     points: list[EquityPoint] = []
     fill_index = 0
 
-    for mark in sorted_marks:
+    for mark_ts_ns, mark_price in sorted_marks:
         while (
             fill_index < len(sorted_fills)
-            and sorted_fills[fill_index].ts_ns <= mark.ts_ns
+            and sorted_fills[fill_index].ts_ns <= mark_ts_ns
         ):
             fill = sorted_fills[fill_index]
             realized_pnl += _apply_fill_to_lots(open_lots, fill, instrument)
             commission += instrument.commission_per_contract * fill.size
             fill_index += 1
 
-        unrealized_pnl = _unrealized_pnl(open_lots, mark.price, instrument)
+        unrealized_pnl = _unrealized_pnl(open_lots, mark_price, instrument)
         equity = realized_pnl + unrealized_pnl - commission
         high_water_mark = max(high_water_mark, equity)
         points.append(
             EquityPoint(
-                ts_ns=mark.ts_ns,
-                mark_price=mark.price,
+                ts_ns=mark_ts_ns,
+                mark_price=mark_price,
+                realized_pnl=realized_pnl,
+                unrealized_pnl=unrealized_pnl,
+                commission=commission,
+                equity=equity,
+                drawdown=high_water_mark - equity,
+            )
+        )
+
+    return tuple(points)
+
+
+def _iter_mark_pairs(
+    marks: ValuationMarkInput,
+) -> Iterable[tuple[int, Price]]:
+    for mark in marks:
+        if isinstance(mark, CompiledValuationMarks):
+            yield from _iter_compiled_mark_pairs(mark)
+        else:
+            yield mark.ts_ns, mark.price
+
+
+def _iter_compiled_mark_pairs(
+    marks: CompiledValuationMarks,
+) -> Iterable[tuple[int, Price]]:
+    for ts_ns, mid_ticks_x2 in zip(marks.ts_ns, marks.mid_ticks_x2, strict=True):
+        yield ts_ns, marks.tick_size * Decimal(mid_ticks_x2) / 2
+
+
+def _build_equity_curve_from_compiled_marks(
+    sorted_fills: tuple[Fill, ...],
+    marks: CompiledValuationMarks,
+    instrument: InstrumentSpec,
+) -> tuple[EquityPoint, ...]:
+    open_lots: list[PositionLot] = []
+    realized_pnl = Decimal("0")
+    commission = Decimal("0")
+    high_water_mark = Decimal("0")
+    points: list[EquityPoint] = []
+    fill_index = 0
+
+    for ts_ns, mid_ticks_x2 in zip(marks.ts_ns, marks.mid_ticks_x2, strict=True):
+        while (
+            fill_index < len(sorted_fills)
+            and sorted_fills[fill_index].ts_ns <= ts_ns
+        ):
+            fill = sorted_fills[fill_index]
+            realized_pnl += _apply_fill_to_lots(open_lots, fill, instrument)
+            commission += instrument.commission_per_contract * fill.size
+            fill_index += 1
+
+        mark_price = marks.tick_size * Decimal(mid_ticks_x2) / 2
+        unrealized_pnl = _unrealized_pnl(open_lots, mark_price, instrument)
+        equity = realized_pnl + unrealized_pnl - commission
+        high_water_mark = max(high_water_mark, equity)
+        points.append(
+            EquityPoint(
+                ts_ns=ts_ns,
+                mark_price=mark_price,
                 realized_pnl=realized_pnl,
                 unrealized_pnl=unrealized_pnl,
                 commission=commission,
