@@ -71,6 +71,10 @@ Full replay throughput answers, "how quickly can the normal audited research
 workflow produce a `ReplayResult`?"
 
 Both numbers matter. They should not be collapsed into one claim.
+`Replay(...)` compiles the immutable event stream into primitive columns once
+per replay object. Repeated strategy runs can share that read-only view, which
+keeps the future boundary-batched path from rebuilding columns inside
+`run_many(...)`.
 
 ## What This Exposes
 

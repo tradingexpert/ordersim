@@ -14,6 +14,7 @@ from ordersim import (
     RestingOrder,
 )
 from ordersim.fixtures.synthetic import SyntheticSource
+from ordersim.replay import simulator as replay_simulator
 from ordersim.types import OrderEvent
 
 
@@ -92,6 +93,32 @@ def test_replay_run_many_preserves_solo_equivalence() -> None:
     assert many["baseline"].fills == solo.fills
     assert many["baseline"].final_position == solo.final_position
     assert many["copy"].fills == solo.fills
+
+
+def test_replay_compiles_immutable_stream_once_for_run_many(monkeypatch) -> None:
+    calls = 0
+    original = replay_simulator.CompiledEventColumns.from_events
+
+    def spy_from_events(cls, events, *, tick_size):
+        nonlocal calls
+        calls += 1
+        return original(events, tick_size=tick_size)
+
+    monkeypatch.setattr(
+        replay_simulator.CompiledEventColumns,
+        "from_events",
+        classmethod(spy_from_events),
+    )
+    replay = Replay(data=SyntheticSource.small_mbo(), instrument=gc_spec())
+
+    replay.run_many(
+        {
+            "baseline": read_book_then_cross_spread,
+            "copy": read_book_then_cross_spread,
+        }
+    )
+
+    assert calls == 1
 
 
 def test_replay_gateway_exposes_book_depth() -> None:
