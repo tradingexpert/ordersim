@@ -80,8 +80,12 @@ The projects serve different workflows.
 The pure Python engine is still the reference implementation, because it is the
 clearest place to inspect queue behavior and prove equivalence. Packaged wheels
 include the compiled `CppMatchingEngine`; ordinary `Replay(...)` runs prefer it
-because it preserves the same public contract while avoiding the Python hot
-loop. Source checkouts build the extension during normal installation:
+because it is the compiled implementation the project intends to keep
+equivalent and scale over time. The direct C++ batch-ingest path is already
+substantially faster for callers that own the event loop; ordinary audited
+`Replay(...)` currently remains event-by-event so it can record per-event
+valuation marks. Source checkouts build the extension during normal
+installation:
 
 ```bash
 python -m pip install -e ".[dev]"
@@ -275,6 +279,7 @@ Planned next milestones:
 - Connectors: `docs/connectors.md`
 - Releasing: `docs/releasing.md`
 - Engineering standards: `docs/engineering-standards.md`
+- Benchmarks: `docs/benchmarks.md`
 - Example: `examples/canonical.py`
 - Schema reference: `docs/schema.md`
 - AI agent guide: `AGENTS.md`

@@ -6,8 +6,8 @@
 - the Python engine is the readable reference used to inspect behavior and
   prove equivalence.
 
-That split is intentional. It keeps the hot path fast without making the model
-opaque.
+That split is intentional. It keeps a readable reference model while allowing
+compiled paths to scale without changing public semantics.
 
 Execution engines consume normalized `MBOEvent` rows and strategy order intents.
 They do not read vendor data directly.
@@ -32,10 +32,13 @@ plain and inspectable. Public behavior should be judged against it.
 ## Default Selection
 
 `Replay(...)` prefers `CppMatchingEngine` when the compiled extension is
-available. Packaged wheels are expected to include that extension. Compiled
-replay is the normal useful default once behavioral equivalence has been proven:
-users get the same fills and order log without paying Python-loop cost on every
-run.
+available. Packaged wheels are expected to include that extension. The compiled
+engine is the normal default once behavioral equivalence has been proven, so
+users exercise the implementation the project intends to scale over time.
+
+Ordinary audited `Replay(...)` currently still applies one event at a time so it
+can preserve per-event valuation marks and result assembly. The compiled batch
+path is a separate direct-engine API for callers who own the event loop.
 
 If the extension is unavailable, `Replay(...)` falls back to `MatchingEngine`.
 Pass `execution_engine_factory=MatchingEngine` when the Python version is the
@@ -125,6 +128,10 @@ The repository also runs native C++ core tests in CI. Those tests catch
 low-level engine regressions before Python enters the picture; the replay
 equivalence suite is still required because native tests alone cannot prove the
 public API remains identical.
+
+For performance measurements, see `docs/benchmarks.md`. Direct engine
+throughput and full replay throughput are intentionally measured separately
+because they answer different questions.
 
 ## Equivalence Harness
 

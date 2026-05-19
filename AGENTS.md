@@ -199,3 +199,6 @@ Core tests should prove behavior, not implementation details:
 
 If a change touches matching, venue, OMS, or replay ordering, run the
 solo-equivalence tests before merging.
+
+For performance work, keep direct execution-engine throughput separate from
+full audited replay throughput. See `docs/benchmarks.md`.
