@@ -7,6 +7,16 @@ namespace py = pybind11;
 
 namespace {
 
+struct BatchBuffers {
+    py::ssize_t n;
+    const int64_t* ts_ns;
+    const uint8_t* action;
+    const uint8_t* side;
+    const int64_t* price_ticks;
+    const int32_t* size;
+    const int64_t* order_id;
+};
+
 template <typename T>
 const T* checked_buffer(
     const py::buffer& buffer,
@@ -31,8 +41,7 @@ const T* checked_buffer(
     return static_cast<const T*>(info.ptr);
 }
 
-std::vector<FillRow> apply_events_batch(
-    MatchingEngineCpp& engine,
+BatchBuffers read_batch_buffers(
     const py::buffer& ts_ns,
     const py::buffer& action,
     const py::buffer& side,
@@ -53,53 +62,113 @@ std::vector<FillRow> apply_events_batch(
     }
 
     const py::ssize_t n = ts_info.shape[0];
-    const auto* ts_data = static_cast<const int64_t*>(ts_info.ptr);
-    const auto* action_data = checked_buffer<uint8_t>(
+    return BatchBuffers{
+        n,
+        static_cast<const int64_t*>(ts_info.ptr),
+        checked_buffer<uint8_t>(
+            action,
+            py::format_descriptor<uint8_t>::format().c_str(),
+            "action",
+            n
+        ),
+        checked_buffer<uint8_t>(
+            side,
+            py::format_descriptor<uint8_t>::format().c_str(),
+            "side",
+            n
+        ),
+        checked_buffer<int64_t>(
+            price_ticks,
+            py::format_descriptor<int64_t>::format().c_str(),
+            "price_ticks",
+            n
+        ),
+        checked_buffer<int32_t>(
+            size,
+            py::format_descriptor<int32_t>::format().c_str(),
+            "size",
+            n
+        ),
+        checked_buffer<int64_t>(
+            order_id,
+            py::format_descriptor<int64_t>::format().c_str(),
+            "order_id",
+            n
+        ),
+    };
+}
+
+std::vector<FillRow> apply_events_batch(
+    MatchingEngineCpp& engine,
+    const py::buffer& ts_ns,
+    const py::buffer& action,
+    const py::buffer& side,
+    const py::buffer& price_ticks,
+    const py::buffer& size,
+    const py::buffer& order_id
+) {
+    const BatchBuffers batch = read_batch_buffers(
+        ts_ns,
         action,
-        py::format_descriptor<uint8_t>::format().c_str(),
-        "action",
-        n
-    );
-    const auto* side_data = checked_buffer<uint8_t>(
         side,
-        py::format_descriptor<uint8_t>::format().c_str(),
-        "side",
-        n
-    );
-    const auto* price_data = checked_buffer<int64_t>(
         price_ticks,
-        py::format_descriptor<int64_t>::format().c_str(),
-        "price_ticks",
-        n
-    );
-    const auto* size_data = checked_buffer<int32_t>(
         size,
-        py::format_descriptor<int32_t>::format().c_str(),
-        "size",
-        n
-    );
-    const auto* order_data = checked_buffer<int64_t>(
-        order_id,
-        py::format_descriptor<int64_t>::format().c_str(),
-        "order_id",
-        n
+        order_id
     );
 
     std::vector<FillRow> fills;
 
-    for (py::ssize_t i = 0; i < n; ++i) {
+    for (py::ssize_t i = 0; i < batch.n; ++i) {
         const auto event_fills = engine.apply_event_code(
-            ts_data[i],
-            static_cast<char>(action_data[i]),
-            static_cast<char>(side_data[i]),
-            price_data[i],
-            size_data[i],
-            order_data[i]
+            batch.ts_ns[i],
+            static_cast<char>(batch.action[i]),
+            static_cast<char>(batch.side[i]),
+            batch.price_ticks[i],
+            batch.size[i],
+            batch.order_id[i]
         );
         fills.insert(fills.end(), event_fills.begin(), event_fills.end());
     }
 
     return fills;
+}
+
+py::tuple apply_events_until_fill(
+    MatchingEngineCpp& engine,
+    const py::buffer& ts_ns,
+    const py::buffer& action,
+    const py::buffer& side,
+    const py::buffer& price_ticks,
+    const py::buffer& size,
+    const py::buffer& order_id
+) {
+    const BatchBuffers batch = read_batch_buffers(
+        ts_ns,
+        action,
+        side,
+        price_ticks,
+        size,
+        order_id
+    );
+
+    std::vector<FillRow> fills;
+
+    for (py::ssize_t i = 0; i < batch.n; ++i) {
+        const auto event_fills = engine.apply_event_code(
+            batch.ts_ns[i],
+            static_cast<char>(batch.action[i]),
+            static_cast<char>(batch.side[i]),
+            batch.price_ticks[i],
+            batch.size[i],
+            batch.order_id[i]
+        );
+        if (!event_fills.empty()) {
+            fills.insert(fills.end(), event_fills.begin(), event_fills.end());
+            return py::make_tuple(i + 1, fills);
+        }
+    }
+
+    return py::make_tuple(batch.n, fills);
 }
 
 }  // namespace
@@ -116,6 +185,7 @@ PYBIND11_MODULE(_matching_engine_cpp, module) {
         .def(py::init<>())
         .def("apply_event", &MatchingEngineCpp::apply_event)
         .def("apply_events_batch", &apply_events_batch)
+        .def("apply_events_until_fill", &apply_events_until_fill)
         .def("place_limit", &MatchingEngineCpp::place_limit)
         .def("place_market", &MatchingEngineCpp::place_market)
         .def("cancel", &MatchingEngineCpp::cancel)

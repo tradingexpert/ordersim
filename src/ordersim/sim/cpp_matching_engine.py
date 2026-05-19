@@ -53,6 +53,22 @@ class CppMatchingEngine:
         )
         return [self._fill_from_row(row) for row in rows]
 
+    def apply_events_until_fill(
+        self,
+        events: CompiledEventSlice,
+    ) -> tuple[int, list[Fill]]:
+        """Apply a compiled slice until the first passive fill boundary."""
+
+        events_applied, rows = self._core.apply_events_until_fill(
+            events.ts_ns,
+            events.action,
+            events.side,
+            events.price_ticks,
+            events.size,
+            events.order_id,
+        )
+        return int(events_applied), [self._fill_from_row(row) for row in rows]
+
     def advance_time(self, ts_ns: int) -> None:
         self._core.advance_time(ts_ns)
 

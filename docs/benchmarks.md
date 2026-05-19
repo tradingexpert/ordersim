@@ -88,5 +88,10 @@ up the auditability of `ReplayResult`. It also keeps fill-connected strategies
 honest: Python should regain control when execution state changes in a way the
 strategy can observe.
 
+The first engine primitive for that design is
+`CppMatchingEngine.apply_events_until_fill(...)`. It consumes a compiled slice
+until the first passive fill boundary and returns the event count needed to
+resume replay at the correct row.
+
 CI should keep benchmark code runnable; it should not enforce fixed speed
 thresholds across hardware.
