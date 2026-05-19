@@ -93,5 +93,9 @@ The first engine primitive for that design is
 until the first passive fill boundary and returns the event count needed to
 resume replay at the correct row.
 
+The corresponding Python helper is `advance_until_fill_boundary(...)`. It keeps
+the boundary contract testable on the scalar reference engine and the compiled
+engine, which is the step before changing the ordinary replay loop.
+
 CI should keep benchmark code runnable; it should not enforce fixed speed
 thresholds across hardware.
