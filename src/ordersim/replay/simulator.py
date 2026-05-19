@@ -19,6 +19,7 @@ from ordersim.latency import (
     default_latency_model_factory,
 )
 from ordersim.recording import RecordingGateway
+from ordersim.replay.compiled_events import CompiledEventColumns
 from ordersim.sim import (
     ExecutionEngine,
     ExecutionEngineFactory,
@@ -76,11 +77,17 @@ class ReplayGateway:
         *,
         engine: ExecutionEngine,
         latency_model: LatencyModel,
+        compiled_events: CompiledEventColumns | None = None,
     ) -> "ReplayGateway":
         """Build a gateway from the immutable event tuple already held by Replay."""
 
         gateway = cls.__new__(cls)
-        gateway._init(events, engine=engine, latency_model=latency_model)
+        gateway._init(
+            events,
+            engine=engine,
+            latency_model=latency_model,
+            compiled_events=compiled_events,
+        )
         return gateway
 
     def _init(
@@ -89,8 +96,10 @@ class ReplayGateway:
         *,
         engine: ExecutionEngine | None,
         latency_model: LatencyModel | None,
+        compiled_events: CompiledEventColumns | None = None,
     ) -> None:
         self._events = events
+        self._compiled_events = compiled_events
         self._engine = engine or python_execution_engine_factory()
         self._latency_model = latency_model or default_latency_model_factory()
         self._cursor = 0
@@ -227,6 +236,10 @@ class Replay:
         )
         for event in self.data:
             instrument.assert_price_aligned(event.price)
+        self._compiled_events = CompiledEventColumns.from_events(
+            self.data,
+            tick_size=instrument.tick_size,
+        )
 
     def run(
         self,
@@ -240,6 +253,7 @@ class Replay:
             self.data,
             engine=self._execution_engine_factory(),
             latency_model=self._latency_model_factory(),
+            compiled_events=self._compiled_events,
         )
         order_events: list[OrderEvent] = []
         recording_gateway = RecordingGateway(
