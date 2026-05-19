@@ -32,8 +32,12 @@ This benchmark measures event ingestion through the execution engine itself:
 | Path | What it measures |
 |---|---|
 | `MatchingEngine` scalar | `apply_event(MBOEvent)` on the Python reference engine |
-| `CppMatchingEngine` scalar | `apply_event(MBOEvent)` one event at a time |
+| `CppMatchingEngine` per-event | `apply_event(MBOEvent)` one event at a time for compatibility checks |
 | `CppMatchingEngine` batch | `apply_events_batch(...)` over precompiled primitive columns |
+
+The per-event C++ number is a diagnostic baseline, not the intended fast path.
+The useful compiled path is batched: Python hands C++ a contiguous slice and C++
+advances internally.
 
 The batch result excludes `CompiledEventColumns.from_events(...)` construction.
 That conversion is meant to happen once before repeated compiled-engine runs;
@@ -57,10 +61,14 @@ It compares the explicit Python reference engine with the default engine chosen
 by `Replay(...)`. Full replay is slower than direct engine ingestion because it
 also performs the work that makes `ordersim` inspectable:
 
-- event-by-event replay advancement;
 - per-event valuation marks when both sides of the book exist;
 - fill-ledger and equity-curve assembly;
 - strategy-facing gateway calls.
+
+When the default C++ engine is available, ordinary replay advances each requested
+time slice through compiled columns and returns both fills and valuation marks.
+The Python reference engine remains event-by-event because it is the readable
+behavioral model.
 
 ## Interpreting Results
 
@@ -78,9 +86,10 @@ keeps the future boundary-batched path from rebuilding columns inside
 
 ## What This Exposes
 
-The intended next performance step is boundary-batched replay. In that design,
-the compiled engine can advance independently through market-data events until
-the next point where Python must observe or decide:
+The compiled replay path already advances requested time slices internally while
+preserving fills and valuation marks. The next performance step is stricter
+boundary-batched replay. In that design, the compiled engine can advance
+independently until the next point where Python must observe or decide:
 
 - the strategy asks to advance only up to a timestamp;
 - a passive fill occurs and strategy logic may need to react;

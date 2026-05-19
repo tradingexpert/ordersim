@@ -3,6 +3,7 @@
 from decimal import Decimal
 from typing import Any
 
+from ordersim.economics import ValuationMark
 from ordersim.replay.compiled_events import CompiledEventSlice
 from ordersim.sim.matching_engine import PriceLevel
 from ordersim.types import (
@@ -52,6 +53,24 @@ class CppMatchingEngine:
             events.order_id,
         )
         return [self._fill_from_row(row) for row in rows]
+
+    def apply_events_batch_with_marks(
+        self,
+        events: CompiledEventSlice,
+    ) -> tuple[list[Fill], list[ValuationMark]]:
+        """Apply one compiled event slice and return fills plus midpoint marks."""
+
+        fill_rows, mark_rows = self._core.apply_events_batch_with_marks(
+            events.ts_ns,
+            events.action,
+            events.side,
+            events.price_ticks,
+            events.size,
+            events.order_id,
+        )
+        fills = [self._fill_from_row(row) for row in fill_rows]
+        marks = [self._valuation_mark_from_row(row) for row in mark_rows]
+        return fills, marks
 
     def apply_events_until_fill(
         self,
@@ -156,6 +175,16 @@ class CppMatchingEngine:
             price=self._ticks_to_price(row.price_ticks),
             size=row.size,
             ts_ns=row.ts_ns,
+        )
+
+    def _valuation_mark_from_row(self, row: Any) -> ValuationMark:
+        return ValuationMark(
+            ts_ns=row.ts_ns,
+            price=(
+                self._ticks_to_price(row.bid_ticks)
+                + self._ticks_to_price(row.ask_ticks)
+            )
+            / 2,
         )
 
 

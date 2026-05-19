@@ -17,6 +17,12 @@ struct BatchBuffers {
     const int64_t* order_id;
 };
 
+struct MarkRow {
+    int64_t ts_ns;
+    int64_t bid_ticks;
+    int64_t ask_ticks;
+};
+
 template <typename T>
 const T* checked_buffer(
     const py::buffer& buffer,
@@ -133,6 +139,47 @@ std::vector<FillRow> apply_events_batch(
     return fills;
 }
 
+py::tuple apply_events_batch_with_marks(
+    MatchingEngineCpp& engine,
+    const py::buffer& ts_ns,
+    const py::buffer& action,
+    const py::buffer& side,
+    const py::buffer& price_ticks,
+    const py::buffer& size,
+    const py::buffer& order_id
+) {
+    const BatchBuffers batch = read_batch_buffers(
+        ts_ns,
+        action,
+        side,
+        price_ticks,
+        size,
+        order_id
+    );
+
+    std::vector<FillRow> fills;
+    std::vector<MarkRow> marks;
+
+    for (py::ssize_t i = 0; i < batch.n; ++i) {
+        const auto event_fills = engine.apply_event_code(
+            batch.ts_ns[i],
+            static_cast<char>(batch.action[i]),
+            static_cast<char>(batch.side[i]),
+            batch.price_ticks[i],
+            batch.size[i],
+            batch.order_id[i]
+        );
+        fills.insert(fills.end(), event_fills.begin(), event_fills.end());
+
+        const auto [bid_ticks, ask_ticks] = engine.book_top();
+        if (bid_ticks >= 0 && ask_ticks >= 0) {
+            marks.push_back(MarkRow{batch.ts_ns[i], bid_ticks, ask_ticks});
+        }
+    }
+
+    return py::make_tuple(fills, marks);
+}
+
 py::tuple apply_events_until_fill(
     MatchingEngineCpp& engine,
     const py::buffer& ts_ns,
@@ -181,10 +228,16 @@ PYBIND11_MODULE(_matching_engine_cpp, module) {
         .def_readonly("size", &FillRow::size)
         .def_readonly("ts_ns", &FillRow::ts_ns);
 
+    py::class_<MarkRow>(module, "MarkRow")
+        .def_readonly("ts_ns", &MarkRow::ts_ns)
+        .def_readonly("bid_ticks", &MarkRow::bid_ticks)
+        .def_readonly("ask_ticks", &MarkRow::ask_ticks);
+
     py::class_<MatchingEngineCpp>(module, "MatchingEngineCpp")
         .def(py::init<>())
         .def("apply_event", &MatchingEngineCpp::apply_event)
         .def("apply_events_batch", &apply_events_batch)
+        .def("apply_events_batch_with_marks", &apply_events_batch_with_marks)
         .def("apply_events_until_fill", &apply_events_until_fill)
         .def("place_limit", &MatchingEngineCpp::place_limit)
         .def("place_market", &MatchingEngineCpp::place_market)
