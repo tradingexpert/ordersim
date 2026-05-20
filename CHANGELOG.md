@@ -2,6 +2,17 @@
 
 All notable public changes to `ordersim` are documented here.
 
+## 0.1.3 - 2026-05-20
+
+- Improved default replay throughput by precompiling canonical event streams
+  once and using the C++ batch path during replay advancement while preserving
+  fills and valuation marks.
+- Moved valuation mark types and compact mark iteration into
+  `ordersim.valuation`, keeping public imports stable while making economics
+  easier to read.
+- Broadened README, PyPI metadata, and GitHub topics around order-book replay,
+  latency-aware fill simulation, execution modeling, and market microstructure.
+
 ## 0.1.2 - 2026-05-15
 
 - Added a visual latency demo showing the same strategy taking different fill
