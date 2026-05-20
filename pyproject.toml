@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ordersim"
 version = "0.1.2"
-description = "Inspectable execution simulator for order-book replay"
+description = "Inspectable execution simulator for order-book replay and latency-aware fill simulation"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -15,10 +15,21 @@ authors = [
 keywords = [
   "algorithmic trading",
   "backtesting",
+  "execution modeling",
   "execution simulator",
+  "fill simulation",
+  "latency modeling",
+  "latency simulation",
   "limit order book",
   "market microstructure",
+  "market replay",
+  "market simulator",
+  "market structure",
   "order book",
+  "order book replay",
+  "order simulator",
+  "quantitative finance",
+  "trading systems",
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",

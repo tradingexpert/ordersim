@@ -12,6 +12,13 @@ It is built for researchers who need to audit every order intent, compare many
 strategies on the exact same replay, and let humans or AI agents write
 strategies against a small gateway API.
 
+## Scope
+
+`ordersim` focuses on execution replay and execution-aware simulation. Areas of
+interest include order-book replay, market replay, latency modeling,
+queue-position effects, fill simulation, execution modeling, execution-aware
+backtesting, and market microstructure research.
+
 ## What It Does
 
 - Replays order-book data and simulates order execution with explicit order
