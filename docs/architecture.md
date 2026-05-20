@@ -18,6 +18,7 @@ flowchart LR
     engine["ExecutionEngine"]
     python["MatchingEngine<br/>Python reference"]
     cpp["CppMatchingEngine<br/>preferred when available"]
+    valuation["Valuation marks"]
     result["ReplayResult<br/>fills, order log, economics"]
 
     raw --> connector
@@ -29,6 +30,8 @@ flowchart LR
     gateway --> engine
     engine --> python
     engine --> cpp
+    gateway --> valuation
+    valuation --> result
     gateway --> result
     recording --> result
 ```
@@ -39,6 +42,7 @@ The main boundaries are:
 - strategies depend on `OrderGateway`, not on storage or engine internals;
 - replay normalizes inputs once, chooses an execution engine, and gathers
   results;
+- valuation marks are collected during replay and consumed by economics;
 - the Python engine defines behavior; the C++ engine must match it.
 
 ## Recommended Data Flow

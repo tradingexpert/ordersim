@@ -32,6 +32,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/recording.py` | Recording wrapper for order-intent logs | Yes |
 | `ordersim/specs.py` | Instrument specifications | Public extension surface |
 | `ordersim/types.py` | Public dataclasses and type aliases | Yes |
+| `ordersim/valuation.py` | Valuation marks and compact mark transport | Yes |
 | `ordersim/fixtures/` | Tiny public fixtures for examples and tests | Public |
 | `ordersim/connectors/` | Data source contracts | Yes |
 | `ordersim/connectors/csv.py` | Normalized CSV `MBOEvent` source | Yes |

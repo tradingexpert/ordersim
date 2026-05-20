@@ -102,16 +102,17 @@ See `docs/economics.md` for the assumptions and explicit non-goals.
 
 ## `ValuationMark` And `EquityPoint`
 
-`ValuationMark` is an input mark used to value open lots.
+`ValuationMark` lives in `ordersim.valuation` and is re-exported from
+`ordersim`. It is an input mark used to value open lots.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `ts_ns` | `int` | Mark timestamp as UTC Unix-epoch nanoseconds. |
 | `price` | `Decimal` | Price used for open-lot valuation. |
 
-`CompiledValuationMarks` is the compact internal form used by the C++ replay
-path. It stores mark timestamps and midpoint prices as primitive integer
-columns:
+`CompiledValuationMarks` also lives in `ordersim.valuation`. It is the compact
+internal form used by the C++ replay path. It stores mark timestamps and
+midpoint prices as primitive integer columns:
 
 | Field | Type | Meaning |
 |---|---|---|
