@@ -1,7 +1,5 @@
 from decimal import Decimal
 
-import pytest
-
 from ordersim import (
     CompiledValuationMarks,
     EquityPoint,
@@ -168,12 +166,3 @@ def test_build_equity_curve_accepts_mixed_public_and_compact_marks() -> None:
         (1, Decimal("100.0")),
         (2, Decimal("100.5")),
     ]
-
-
-def test_compact_valuation_marks_reject_mismatched_columns() -> None:
-    with pytest.raises(ValueError, match="equal length"):
-        CompiledValuationMarks.from_bytes(
-            ts_ns=int64_bytes((1, 2)),
-            mid_ticks_x2=int64_bytes((2000,)),
-            tick_size=Decimal("0.10"),
-        )

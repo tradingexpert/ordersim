@@ -7,11 +7,8 @@ from typing import Any
 
 from ordersim.connectors import EventInput, normalize_events
 from ordersim.economics import (
-    CompiledValuationMarks,
     EquityPoint,
     ExecutionSummary,
-    ValuationMark,
-    ValuationMarkInput,
     build_equity_curve,
     summarize_fills,
 )
@@ -41,6 +38,11 @@ from ordersim.types import (
     RestingOrder,
     Side,
     TimeInForce,
+)
+from ordersim.valuation import (
+    CompiledValuationMarks,
+    ValuationMark,
+    ValuationMarkInput,
 )
 
 Strategy = Callable[[OrderGateway], Any]

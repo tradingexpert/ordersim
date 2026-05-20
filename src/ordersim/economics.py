@@ -1,12 +1,27 @@
 """Execution economics computed directly from fills."""
 
-from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import TypeAlias
 
 from ordersim.specs import InstrumentSpec
 from ordersim.types import Fill, Price, Side
+from ordersim.valuation import (
+    CompiledValuationMarks,
+    ValuationMark,
+    ValuationMarkInput,
+    iter_valuation_mark_pairs,
+)
+
+__all__ = [
+    "CompiledValuationMarks",
+    "EquityPoint",
+    "ExecutionSummary",
+    "PositionLot",
+    "ValuationMark",
+    "ValuationMarkInput",
+    "build_equity_curve",
+    "summarize_fills",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,46 +53,6 @@ class ExecutionSummary:
 
 
 @dataclass(frozen=True, slots=True)
-class ValuationMark:
-    """One mark price used to value open lots."""
-
-    ts_ns: int
-    price: Price
-
-
-@dataclass(frozen=True, slots=True)
-class CompiledValuationMarks:
-    """Compact valuation marks stored as timestamp and midpoint tick columns.
-
-    `mid_ticks_x2` stores `bid_ticks + ask_ticks`, so half-tick midpoints stay
-    exact until the public `Decimal` equity curve is built.
-    """
-
-    ts_ns: memoryview
-    mid_ticks_x2: memoryview
-    tick_size: Decimal
-
-    @classmethod
-    def from_bytes(
-        cls,
-        *,
-        ts_ns: bytes,
-        mid_ticks_x2: bytes,
-        tick_size: Decimal,
-    ) -> "CompiledValuationMarks":
-        """Build compact marks from native int64 byte columns."""
-
-        timestamps = memoryview(ts_ns).cast("q")
-        mids = memoryview(mid_ticks_x2).cast("q")
-        if len(timestamps) != len(mids):
-            raise ValueError("valuation mark columns must have equal length")
-        return cls(ts_ns=timestamps, mid_ticks_x2=mids, tick_size=tick_size)
-
-    def __len__(self) -> int:
-        return len(self.ts_ns)
-
-
-@dataclass(frozen=True, slots=True)
 class EquityPoint:
     """One point on a mark-to-market equity curve."""
 
@@ -88,14 +63,6 @@ class EquityPoint:
     commission: Decimal
     equity: Decimal
     drawdown: Decimal
-
-
-ValuationMarkInput: TypeAlias = (
-    tuple[ValuationMark | CompiledValuationMarks, ...]
-    | list[ValuationMark | CompiledValuationMarks]
-    | CompiledValuationMarks
-)
-
 
 def summarize_fills(
     fills: tuple[Fill, ...] | list[Fill],
@@ -160,7 +127,9 @@ def build_equity_curve(
             instrument,
         )
 
-    sorted_marks = tuple(sorted(_iter_mark_pairs(marks), key=lambda mark: mark[0]))
+    sorted_marks = tuple(
+        sorted(iter_valuation_mark_pairs(marks), key=lambda mark: mark[0])
+    )
     open_lots: list[PositionLot] = []
     realized_pnl = Decimal("0")
     commission = Decimal("0")
@@ -194,23 +163,6 @@ def build_equity_curve(
         )
 
     return tuple(points)
-
-
-def _iter_mark_pairs(
-    marks: ValuationMarkInput,
-) -> Iterable[tuple[int, Price]]:
-    for mark in marks:
-        if isinstance(mark, CompiledValuationMarks):
-            yield from _iter_compiled_mark_pairs(mark)
-        else:
-            yield mark.ts_ns, mark.price
-
-
-def _iter_compiled_mark_pairs(
-    marks: CompiledValuationMarks,
-) -> Iterable[tuple[int, Price]]:
-    for ts_ns, mid_ticks_x2 in zip(marks.ts_ns, marks.mid_ticks_x2, strict=True):
-        yield ts_ns, marks.tick_size * Decimal(mid_ticks_x2) / 2
 
 
 def _build_equity_curve_from_compiled_marks(

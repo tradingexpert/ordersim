@@ -11,11 +11,9 @@ from ordersim.connectors import (
     write_parquet,
 )
 from ordersim.economics import (
-    CompiledValuationMarks,
     EquityPoint,
     ExecutionSummary,
     PositionLot,
-    ValuationMark,
     build_equity_curve,
     summarize_fills,
 )
@@ -64,6 +62,7 @@ from ordersim.types import (
     Side,
     TimeInForce,
 )
+from ordersim.valuation import CompiledValuationMarks, ValuationMark
 
 __all__ = [
     "BookSide",

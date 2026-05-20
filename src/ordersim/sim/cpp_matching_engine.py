@@ -3,7 +3,6 @@
 from decimal import Decimal
 from typing import Any
 
-from ordersim.economics import CompiledValuationMarks
 from ordersim.replay.compiled_events import CompiledEventSlice
 from ordersim.sim.matching_engine import PriceLevel
 from ordersim.types import (
@@ -16,6 +15,7 @@ from ordersim.types import (
     Side,
     TimeInForce,
 )
+from ordersim.valuation import CompiledValuationMarks
 
 
 class CppMatchingEngine:

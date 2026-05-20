@@ -81,6 +81,10 @@ midpoints as `bid_ticks + ask_ticks` until equity construction. Public
 only avoids creating an intermediate Python `ValuationMark` object for every
 market-data event.
 
+Valuation mark inputs live in `ordersim.valuation`; economics consumes them to
+build realized and marked output. The top-level package re-exports
+`ValuationMark` and `CompiledValuationMarks` for ordinary user code.
+
 Replay only marks times it actually advances through. Full-session intraday
 drawdown therefore requires the strategy or harness to advance through the
 session window being studied, or to call `build_equity_curve(...)` directly with
