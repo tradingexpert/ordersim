@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Open-ended question or discussion
+    url: https://github.com/tradingexpert/ordersim/discussions
+    about: Conceptual questions, microstructure modeling debates, or anything not yet a concrete bug or feature.
+  - name: Editorial context
+    url: https://marketsinproduction.com/ordersim/
+    about: The Markets in Production page for ordersim — positioning, scope, and the wider essay context.

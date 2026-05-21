@@ -1,0 +1,43 @@
+name: Feature request
+description: Propose a new capability, modeling primitive, or API addition.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ordersim aims for clarity per line of code over feature breadth.
+        Requests that fit the inspectable-execution-replay scope are
+        welcome; requests that turn this into a general backtester or a
+        live trading system are out of scope.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What execution question would this answer?
+      description: |
+        Frame the proposal as the research or simulation question that
+        cannot currently be answered. "I want X" is harder to evaluate
+        than "I cannot currently tell whether Y happens because Z is not
+        modeled."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: API surface, modeling primitive, or behavior you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: |
+        Workarounds you tried, related libraries, or reasons existing
+        primitives are not enough.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: This is about inspectable execution replay (in scope).
+        - label: I have read the "What It Is Not" section of the README.
