@@ -1,0 +1,74 @@
+name: Bug report
+description: An ordersim run produced behavior that contradicts the documented model.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. This template is for cases where the
+        observed behavior diverges from what the docs or equivalence tests
+        claim. For open-ended questions, use
+        [Discussions](https://github.com/tradingexpert/ordersim/discussions)
+        instead.
+  - type: input
+    id: version
+    attributes:
+      label: ordersim version
+      description: Output of `pip show ordersim` or your editable install commit.
+      placeholder: "0.1.3"
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.11.7"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform
+      placeholder: "macOS 14.5 arm64 / Ubuntu 22.04 x86_64 / ..."
+    validations:
+      required: true
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine
+      description: Which engine produced the observation?
+      options:
+        - Python reference engine
+        - Compiled C++ engine
+        - Both (divergence between them)
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What the documented model — or the other engine — would produce.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Event-stream excerpt, traceback, or other concrete observation.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: Smallest snippet or fixture that exhibits the divergence.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Optional context, hypotheses, or links to related issues/discussions.
