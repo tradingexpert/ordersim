@@ -6,6 +6,16 @@ data, with a Python-facing API and equivalent Python/C++ execution engines.
 Most backtests collapse execution into a final PnL line. `ordersim` exists to
 inspect the path between order intent and actual fills.
 
+## Start here
+
+If you are new to ordersim:
+
+1. Install it: `pip install ordersim`
+2. Run the tiny synthetic example in `examples/canonical.py`
+3. Run the latency comparison in `examples/latency_demo.py`
+4. Read `docs/assumptions.md` to understand what the simulator does and does not model
+5. Open an issue if you have a production execution edge case, data connector idea, or market microstructure question
+   
 ![Same replay, same strategy, different latency](https://raw.githubusercontent.com/tradingexpert/ordersim/main/docs/assets/latency-demo.svg)
 
 It is built for researchers who need to audit every order intent, compare many
