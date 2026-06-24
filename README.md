@@ -317,3 +317,13 @@ new vendor-specific connector.
 ## License
 
 MIT.
+
+## Demo gallery
+
+| Demo | What it shows | Why it matters |
+|---|---|---|
+| `canonical.py` | Basic replay and fill inspection | Shows how order intent becomes fills |
+| `latency_demo.py` | Same strategy under different latency assumptions | Shows why execution timing changes outcomes |
+| `queue_position_changes_fills.py` | Resting order queue position | Shows why visible queue ahead matters |
+| `passive_orders_and_adverse_selection.py` | Passive fills and adverse selection | Shows why fills are not automatically good news |
+| `backtest_vs_execution_replay.py` | Strategy assumption vs execution path | Shows the backtest-to-production gap |
