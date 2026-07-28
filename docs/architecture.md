@@ -67,7 +67,7 @@ Lower-fidelity venue data takes a longer, explicit path:
 
 ```mermaid
 flowchart LR
-    venue["Venue L2 + trades"]
+    venue["Venue L2 + aggregate and individual trades"]
     capture["Raw capture"]
     source["Typed L2 source"]
     model["Named reconstruction model"]

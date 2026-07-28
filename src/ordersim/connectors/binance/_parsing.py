@@ -11,6 +11,7 @@ from ordersim.connectors.binance.l2 import (
     BinanceDepthSnapshot,
     BinanceDepthUpdate,
     BinancePriceLevel,
+    BinanceRawTrade,
     CaptureKind,
     CaptureScope,
     DepthStreamKind,
@@ -34,6 +35,10 @@ def parse_envelope(raw: object) -> BinanceCaptureEnvelope:
             "connection_error",
             "depth_snapshot",
             "message",
+            "raw_trade",
+            "raw_trade_gap",
+            "raw_trade_poll",
+            "raw_trade_poll_error",
             "sequence_gap",
         ),
     )
@@ -122,6 +127,25 @@ def parse_aggregate_trade(
         first_trade_id=required_int(payload, "f"),
         last_trade_id=required_int(payload, "l"),
         buyer_is_maker=required_bool(payload, "m"),
+    )
+
+
+def parse_raw_trade(envelope: BinanceCaptureEnvelope) -> BinanceRawTrade:
+    """Normalize one individually identified REST trade."""
+
+    payload = envelope.payload
+    return BinanceRawTrade(
+        symbol=envelope.symbol,
+        connection_id=envelope.connection_id,
+        received_at_ns=envelope.received_at_ns,
+        received_monotonic_ns=envelope.received_monotonic_ns,
+        trade_id=required_int(payload, "id"),
+        price=required_decimal(payload, "price"),
+        quantity=required_decimal(payload, "qty"),
+        quote_quantity=required_decimal(payload, "quoteQty"),
+        trade_time_ns=milliseconds_to_nanoseconds(payload, "time"),
+        buyer_is_maker=required_bool(payload, "isBuyerMaker"),
+        is_rpi_trade=required_bool(payload, "isRPITrade"),
     )
 
 

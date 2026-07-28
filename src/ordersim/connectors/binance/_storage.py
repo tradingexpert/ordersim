@@ -13,6 +13,7 @@ from typing import Any
 from ordersim.connectors.binance.schema import (
     CAPTURE_SCHEMA_VERSION,
     BinanceCaptureConfig,
+    BinanceRawTradeCaptureConfig,
     CaptureManifest,
     JsonObject,
 )
@@ -21,7 +22,10 @@ from ordersim.connectors.binance.schema import (
 class RawCaptureSink:
     """Serialize capture envelopes to hourly gzip JSONL files."""
 
-    def __init__(self, config: BinanceCaptureConfig) -> None:
+    def __init__(
+        self,
+        config: BinanceCaptureConfig | BinanceRawTradeCaptureConfig,
+    ) -> None:
         self._config = config
         self._run_id = uuid.uuid4().hex
         self._started_at_ns = time.time_ns()
@@ -79,6 +83,7 @@ class RawCaptureSink:
             include_rpi=self._config.include_rpi,
             counts=dict(sorted(self._counts.items())),
             files=tuple(self._files),
+            capture_type=self._config.capture_type,
         )
         manifest_path = self._config.output_dir / f"manifest-{self._run_id}.json"
         manifest_path.write_text(

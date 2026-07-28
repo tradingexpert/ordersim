@@ -11,6 +11,10 @@ CaptureKind: TypeAlias = Literal[
     "connection_error",
     "depth_snapshot",
     "message",
+    "raw_trade",
+    "raw_trade_gap",
+    "raw_trade_poll",
+    "raw_trade_poll_error",
     "sequence_gap",
 ]
 CaptureScope: TypeAlias = Literal["public", "market"]
@@ -93,6 +97,23 @@ class BinanceAggregateTrade:
     first_trade_id: int
     last_trade_id: int
     buyer_is_maker: bool
+
+
+@dataclass(frozen=True, slots=True)
+class BinanceRawTrade:
+    """One individual trade returned by Binance USD-M."""
+
+    symbol: str
+    connection_id: str
+    received_at_ns: int
+    received_monotonic_ns: int
+    trade_id: int
+    price: Decimal
+    quantity: Decimal
+    quote_quantity: Decimal
+    trade_time_ns: int
+    buyer_is_maker: bool
+    is_rpi_trade: bool
 
 
 @dataclass(frozen=True, slots=True)

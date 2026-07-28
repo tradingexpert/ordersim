@@ -32,6 +32,7 @@ quantity at that price; zero means remove the level.
 | `BinanceDepthSnapshot` | `last_update_id`, `bids`, `asks` | REST depth state anchoring one connection. |
 | `BinanceDepthUpdate` | `first_update_id`, `final_update_id`, `previous_update_id`, `bids`, `asks` | One standard or RPI absolute-quantity diff-depth message. |
 | `BinanceAggregateTrade` | `aggregate_trade_id`, `price`, `quantity`, `normal_quantity`, `buyer_is_maker` | Trades aggregated by price and taking side. |
+| `BinanceRawTrade` | `trade_id`, `price`, `quantity`, `quote_quantity`, `buyer_is_maker`, `is_rpi_trade` | One individually identified public trade. |
 | `BinanceBookTicker` | `update_id`, bid and ask price/quantity | Real-time best bid and ask observation. |
 
 All records include `symbol`, `connection_id`, UTC receive nanoseconds, and
@@ -44,6 +45,16 @@ Binance contract quantity can be fractional, so the connector preserves it as
 unit and exact conversion rule before producing the canonical integer
 `MBOEvent.size`. These L2 records are therefore not accepted directly by
 `Replay`.
+
+Raw-trade capture files also contain audit envelopes:
+
+- `raw_trade_poll` records request timing, returned ID bounds, and request
+  weight;
+- `raw_trade_gap` records a missing individual trade-ID range;
+- `raw_trade_poll_error` records a failed request and the last retained ID.
+
+These audit rows are available through `envelopes()` and are not emitted by
+`raw_trades()`.
 
 ## `MBOEvent`
 

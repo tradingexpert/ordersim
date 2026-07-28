@@ -3,14 +3,19 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 CAPTURE_SCHEMA_VERSION = 1
 JsonObject = dict[str, object]
+RECENT_TRADES_REQUEST_WEIGHT = 25
+RAW_TRADE_WEIGHT_BUDGET_PER_MINUTE = 1_800
 
 
 @dataclass(frozen=True, slots=True)
 class BinanceCaptureConfig:
     """Configuration for one raw Binance USD-M futures capture."""
+
+    capture_type: ClassVar[str] = "websocket"
 
     output_dir: Path
     symbols: tuple[str, ...]
@@ -53,6 +58,65 @@ class BinanceCaptureConfig:
         """Return the trade streams captured for one symbol."""
 
         return (f"{symbol.lower()}@aggTrade",)
+
+
+@dataclass(frozen=True, slots=True)
+class BinanceRawTradeCaptureConfig:
+    """Configuration for polling individual Binance USD-M trades."""
+
+    capture_type: ClassVar[str] = "raw_trades"
+
+    output_dir: Path
+    symbols: tuple[str, ...]
+    duration_seconds: float | None = None
+    poll_interval_seconds: float = 2.0
+    request_limit: int = 1000
+    retry_delay_seconds: float = 2.0
+
+    def __post_init__(self) -> None:
+        symbols = tuple(symbol.strip().upper() for symbol in self.symbols)
+        if not symbols:
+            raise ValueError("at least one symbol is required")
+        if any(not symbol.isalnum() for symbol in symbols):
+            raise ValueError("symbols must contain only letters and numbers")
+        if len(set(symbols)) != len(symbols):
+            raise ValueError("symbols must be unique")
+        if self.duration_seconds is not None and self.duration_seconds <= 0:
+            raise ValueError("duration_seconds must be positive")
+        if self.poll_interval_seconds <= 0:
+            raise ValueError("poll_interval_seconds must be positive")
+        if not 1 <= self.request_limit <= 1000:
+            raise ValueError("request_limit must be between 1 and 1000")
+        if self.retry_delay_seconds < 0:
+            raise ValueError("retry_delay_seconds must be non-negative")
+        if (
+            self.estimated_request_weight_per_minute
+            > RAW_TRADE_WEIGHT_BUDGET_PER_MINUTE
+        ):
+            raise ValueError(
+                "raw-trade polling would exceed the conservative "
+                f"{RAW_TRADE_WEIGHT_BUDGET_PER_MINUTE} weight/minute budget"
+            )
+
+        object.__setattr__(self, "output_dir", Path(self.output_dir))
+        object.__setattr__(self, "symbols", symbols)
+
+    @property
+    def include_rpi(self) -> bool:
+        """Return false because this recorder does not capture depth."""
+
+        return False
+
+    @property
+    def estimated_request_weight_per_minute(self) -> float:
+        """Return the configured recent-trades request weight per minute."""
+
+        return (
+            len(self.symbols)
+            * RECENT_TRADES_REQUEST_WEIGHT
+            * 60
+            / self.poll_interval_seconds
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,6 +178,7 @@ class CaptureManifest:
     include_rpi: bool
     counts: dict[str, int]
     files: tuple[str, ...]
+    capture_type: str = "websocket"
 
     def as_dict(self) -> JsonObject:
         """Return a JSON-compatible representation."""
@@ -125,6 +190,7 @@ class CaptureManifest:
             "ended_at_ns": self.ended_at_ns,
             "symbols": list(self.symbols),
             "include_rpi": self.include_rpi,
+            "capture_type": self.capture_type,
             "counts": self.counts,
             "files": list(self.files),
         }
