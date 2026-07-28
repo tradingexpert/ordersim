@@ -94,47 +94,69 @@ class RawTradeSelection:
 
 
 class RawTradeCursor:
-    """Deduplicate overlapping responses and expose missing trade IDs."""
+    """Deduplicate overlap and defer gaps until recovery is impossible."""
 
     def __init__(self) -> None:
-        self._last_trade_id: int | None = None
+        self._next_expected_trade_id: int | None = None
+        self._greatest_observed_trade_id: int | None = None
+        self._pending_trade_ids: set[int] = set()
 
     @property
     def last_trade_id(self) -> int | None:
         """Return the greatest trade ID observed so far."""
 
-        return self._last_trade_id
+        return self._greatest_observed_trade_id
 
     def select(self, trades: tuple[JsonObject, ...]) -> RawTradeSelection:
-        """Return only unseen trades, preserving endpoint order."""
+        """Return unseen trades and any newly unrecoverable ID range."""
 
         trade_ids = tuple(_trade_id(trade) for trade in trades)
         adjacent_ids = zip(trade_ids, trade_ids[1:], strict=False)
         if any(right <= left for left, right in adjacent_ids):
             raise ValueError("Binance recent trades must have increasing IDs")
+        if not trade_ids:
+            return RawTradeSelection(trades=(), gap=None)
 
-        previous = self._last_trade_id
-        if previous is None:
-            new_trades = trades
-        else:
-            new_trades = tuple(
-                trade
-                for trade, trade_id in zip(trades, trade_ids, strict=True)
-                if trade_id > previous
-            )
+        if self._next_expected_trade_id is None:
+            self._next_expected_trade_id = trade_ids[0]
 
-        gap = None
-        if previous is not None and new_trades:
-            first_new_id = _trade_id(new_trades[0])
-            if first_new_id > previous + 1:
-                gap = RawTradeGap(
-                    expected_trade_id=previous + 1,
-                    first_received_trade_id=first_new_id,
-                )
+        gap = self._unrecoverable_gap(trade_ids[0])
+        new_trades: list[JsonObject] = []
+        for trade, trade_id in zip(trades, trade_ids, strict=True):
+            if (
+                trade_id < self._next_expected_trade_id
+                or trade_id in self._pending_trade_ids
+            ):
+                continue
+            self._pending_trade_ids.add(trade_id)
+            new_trades.append(trade)
+            if (
+                self._greatest_observed_trade_id is None
+                or trade_id > self._greatest_observed_trade_id
+            ):
+                self._greatest_observed_trade_id = trade_id
 
-        if new_trades:
-            self._last_trade_id = _trade_id(new_trades[-1])
-        return RawTradeSelection(trades=new_trades, gap=gap)
+        while self._next_expected_trade_id in self._pending_trade_ids:
+            self._pending_trade_ids.remove(self._next_expected_trade_id)
+            self._next_expected_trade_id += 1
+
+        return RawTradeSelection(trades=tuple(new_trades), gap=gap)
+
+    def _unrecoverable_gap(self, oldest_returned_trade_id: int) -> RawTradeGap | None:
+        expected = self._next_expected_trade_id
+        if expected is None or oldest_returned_trade_id <= expected:
+            return None
+        gap = RawTradeGap(
+            expected_trade_id=expected,
+            first_received_trade_id=oldest_returned_trade_id,
+        )
+        self._next_expected_trade_id = oldest_returned_trade_id
+        self._pending_trade_ids = {
+            trade_id
+            for trade_id in self._pending_trade_ids
+            if trade_id >= oldest_returned_trade_id
+        }
+        return gap
 
 
 def _validate_trades(payload: object) -> tuple[JsonObject, ...]:

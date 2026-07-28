@@ -142,7 +142,9 @@ windows. It:
 - stores each exact individual trade payload once;
 - records request timing and Binance's reported one-minute request weight;
 - deduplicates overlapping responses by trade ID;
-- writes `raw_trade_gap` whenever the next observed ID is not contiguous;
+- accepts temporarily late IDs while they remain inside the overlap window;
+- writes `raw_trade_gap` only after the 1,000-row endpoint window has moved
+  beyond a missing ID;
 - writes explicit poll errors rather than silently retrying.
 
 At Binance's current 25-unit request weight, two symbols polled every two

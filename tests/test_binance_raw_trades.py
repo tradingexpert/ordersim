@@ -214,23 +214,37 @@ def test_fetch_url_sets_user_agent_and_returns_headers(
     assert headers["x-mbx-used-weight-1m"] == "25"
 
 
-def test_cursor_deduplicates_overlap_and_reports_gaps() -> None:
+def test_cursor_deduplicates_overlap_and_accepts_late_ids() -> None:
     cursor = RawTradeCursor()
 
     first = cursor.select((raw_trade(10), raw_trade(11), raw_trade(12)))
-    overlap = cursor.select((raw_trade(11), raw_trade(12), raw_trade(13)))
-    gap = cursor.select((raw_trade(15), raw_trade(16)))
+    delayed = cursor.select((raw_trade(11), raw_trade(12), raw_trade(14)))
+    recovered = cursor.select(
+        (raw_trade(12), raw_trade(13), raw_trade(14), raw_trade(15))
+    )
 
     assert [trade["id"] for trade in first.trades] == [10, 11, 12]
-    assert [trade["id"] for trade in overlap.trades] == [13]
-    assert overlap.gap is None
+    assert [trade["id"] for trade in delayed.trades] == [14]
+    assert delayed.gap is None
+    assert [trade["id"] for trade in recovered.trades] == [13, 15]
+    assert recovered.gap is None
+    assert cursor.last_trade_id == 15
+
+
+def test_cursor_reports_gap_after_endpoint_window_moves_past_it() -> None:
+    cursor = RawTradeCursor()
+
+    cursor.select((raw_trade(10), raw_trade(11), raw_trade(13)))
+    gap = cursor.select((raw_trade(13), raw_trade(14)))
+
     assert gap.gap is not None
     assert gap.gap.as_dict() == {
-        "expected_trade_id": 14,
-        "first_received_trade_id": 15,
+        "expected_trade_id": 12,
+        "first_received_trade_id": 13,
         "missing_count": 1,
     }
-    assert cursor.last_trade_id == 16
+    assert [trade["id"] for trade in gap.trades] == [14]
+    assert cursor.last_trade_id == 14
 
 
 def test_cursor_handles_empty_and_fully_stale_responses() -> None:
@@ -275,6 +289,13 @@ def test_record_batch_writes_poll_gap_and_exact_new_trades(tmp_path: Path) -> No
             cursor=cursor,
             batch=batch(11, 13),
         )
+        await _record_batch(
+            sink=sink,
+            symbol="BTCUSDT",
+            connection_id="raw-1",
+            cursor=cursor,
+            batch=batch(13, 14),
+        )
 
     asyncio.run(exercise())
     manifest = sink.close()
@@ -285,16 +306,18 @@ def test_record_batch_writes_poll_gap_and_exact_new_trades(tmp_path: Path) -> No
         "raw_trade",
         "raw_trade",
         "raw_trade_poll",
+        "raw_trade",
+        "raw_trade_poll",
         "raw_trade_gap",
         "raw_trade",
     ]
-    assert records[-1]["payload"] == raw_trade(13)
+    assert records[-1]["payload"] == raw_trade(14)
     assert records[3]["payload"]["new_count"] == 1
     assert manifest.capture_type == "raw_trades"
     assert manifest.counts == {
-        "raw_trade": 3,
+        "raw_trade": 4,
         "raw_trade_gap": 1,
-        "raw_trade_poll": 2,
+        "raw_trade_poll": 3,
     }
 
 
