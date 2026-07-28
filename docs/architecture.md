@@ -69,19 +69,22 @@ Lower-fidelity venue data takes a longer, explicit path:
 flowchart LR
     venue["Venue L2 + trades"]
     capture["Raw capture"]
+    source["Typed L2 source"]
     model["Named reconstruction model"]
     modeled["Modeled MBOEvent stream"]
     parquet["Canonical Parquet + model manifest"]
     replay["Replay"]
 
-    venue --> capture --> model --> modeled --> parquet --> replay
+    venue --> capture --> source --> model --> modeled --> parquet --> replay
 ```
 
 Capture code may live beside connectors because it owns venue I/O and source
 schemas. Capture alone is not a `DataSource`: observed L2 rows must not be
 presented as exchange-native MBO. The reconstruction model owns that
 lower-fidelity assumption and must preserve a manifest describing how its
-events were inferred.
+events were inferred. For Binance, `BinanceCaptureSource` is the typed,
+sequence-validated L2 boundary between the raw evidence and that future model;
+it does not implement the canonical MBO `DataSource` protocol.
 
 ## One Replay Run
 

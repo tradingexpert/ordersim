@@ -8,6 +8,10 @@ All notable public changes to `ordersim` are documented here.
   aggregate-trade, book-ticker, snapshot, and RPI evidence.
 - Added connection manifests and explicit diff-depth sequence-gap records,
   while keeping lower-fidelity capture separate from modeled MBO replay.
+- Added a typed, streaming reader for completed Binance captures with exact
+  depth, aggregate-trade, and book-ticker records.
+- Added snapshot bridging and `pu`/`u` continuity validation for standard
+  Binance diff-depth segments.
 
 ## 0.1.3 - 2026-05-20
 

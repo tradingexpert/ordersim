@@ -17,6 +17,34 @@ before replay sees the event.
 The replay layer operates only on normalized integer timestamps. It does not
 carry Python timezone objects or infer timezone rules after normalization.
 
+## Binance L2 Records
+
+The Binance connector exposes typed records before the modeled-MBO boundary.
+These records describe observed aggregated depth and trades; they do not claim
+to contain stable exchange order IDs.
+
+`BinancePriceLevel` holds an exact positive `Decimal` price and a non-negative
+`Decimal` quantity. In a depth update, the quantity is the new absolute
+quantity at that price; zero means remove the level.
+
+| Record | Important fields | Meaning |
+|---|---|---|
+| `BinanceDepthSnapshot` | `last_update_id`, `bids`, `asks` | REST depth state anchoring one connection. |
+| `BinanceDepthUpdate` | `first_update_id`, `final_update_id`, `previous_update_id`, `bids`, `asks` | One standard or RPI absolute-quantity diff-depth message. |
+| `BinanceAggregateTrade` | `aggregate_trade_id`, `price`, `quantity`, `normal_quantity`, `buyer_is_maker` | Trades aggregated by price and taking side. |
+| `BinanceBookTicker` | `update_id`, bid and ask price/quantity | Real-time best bid and ask observation. |
+
+All records include `symbol`, `connection_id`, UTC receive nanoseconds, and
+local monotonic receive nanoseconds. Stream messages also include exchange
+event and transaction/trade times normalized from Binance milliseconds to UTC
+nanoseconds.
+
+Binance contract quantity can be fractional, so the connector preserves it as
+`Decimal`. A future virtual-L3 reconstruction model must declare its quantity
+unit and exact conversion rule before producing the canonical integer
+`MBOEvent.size`. These L2 records are therefore not accepted directly by
+`Replay`.
+
 ## `MBOEvent`
 
 `MBOEvent` represents one Level 3 / market-by-order event.
