@@ -63,6 +63,26 @@ Direct connector replay is supported, but repeated research should normally
 materialize canonical Parquet once and replay from it thereafter. See
 `docs/data-guide.md`.
 
+Lower-fidelity venue data takes a longer, explicit path:
+
+```mermaid
+flowchart LR
+    venue["Venue L2 + trades"]
+    capture["Raw capture"]
+    model["Named reconstruction model"]
+    modeled["Modeled MBOEvent stream"]
+    parquet["Canonical Parquet + model manifest"]
+    replay["Replay"]
+
+    venue --> capture --> model --> modeled --> parquet --> replay
+```
+
+Capture code may live beside connectors because it owns venue I/O and source
+schemas. Capture alone is not a `DataSource`: observed L2 rows must not be
+presented as exchange-native MBO. The reconstruction model owns that
+lower-fidelity assumption and must preserve a manifest describing how its
+events were inferred.
+
 ## One Replay Run
 
 ```mermaid
@@ -154,6 +174,8 @@ inside `run_many(...)` should match running it alone on the same input.
 | Goal | Extension point |
 |---|---|
 | Support a new vendor format | add a connector under `ordersim/connectors/` |
+| Record lower-fidelity venue evidence | add a capture tool beside the venue connector |
+| Infer order-level events from L2 | add a named reconstruction model and manifest |
 | Add a latency assumption | implement `LatencyModel` |
 | Add an execution implementation | implement `ExecutionEngine` and prove equivalence |
 | Change strategy logic | use only the `OrderGateway` surface |

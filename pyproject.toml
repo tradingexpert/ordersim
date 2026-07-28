@@ -44,6 +44,9 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
+binance = [
+  "websockets>=14",
+]
 databento = [
   "databento",
 ]
@@ -60,6 +63,9 @@ dev = [
 parquet = [
   "pyarrow>=23",
 ]
+
+[project.scripts]
+ordersim-binance-capture = "ordersim.connectors.binance.capture:main"
 
 [project.urls]
 Repository = "https://github.com/tradingexpert/ordersim"

@@ -31,6 +31,11 @@ MBP source provides aggregated size by price level, not individual queue
 members. Queue-position behavior inferred from MBP is necessarily a model, not
 an observation.
 
+Raw L2 capture and L2-to-L3 reconstruction are separate operations. Capture
+must preserve the observed price-level updates and trades. Reconstruction must
+name its cancellation-allocation, event-ordering, and randomness assumptions,
+and modeled events must not be presented as exchange-native MBO.
+
 ## Queue Assumptions
 
 When the strategy places a resting limit order, the default model assumes the
