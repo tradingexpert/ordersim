@@ -10,6 +10,7 @@ from ordersim.connectors.binance.l2 import (
     BinanceCaptureEnvelope,
     BinanceDepthSnapshot,
     BinanceDepthUpdate,
+    BinanceIndividualTrade,
     BinancePriceLevel,
     BinanceRawTrade,
     CaptureKind,
@@ -40,6 +41,7 @@ def parse_envelope(raw: object) -> BinanceCaptureEnvelope:
             "raw_trade_poll",
             "raw_trade_poll_error",
             "sequence_gap",
+            "trade_gap",
         ),
     )
     scope = required_choice(raw, "scope", ("public", "market"))
@@ -126,6 +128,27 @@ def parse_aggregate_trade(
         normal_quantity=normal_quantity,
         first_trade_id=required_int(payload, "f"),
         last_trade_id=required_int(payload, "l"),
+        buyer_is_maker=required_bool(payload, "m"),
+    )
+
+
+def parse_individual_trade(
+    envelope: BinanceCaptureEnvelope,
+) -> BinanceIndividualTrade:
+    """Normalize one individually identified WebSocket trade."""
+
+    payload = envelope.payload
+    check_payload_symbol(envelope)
+    return BinanceIndividualTrade(
+        symbol=envelope.symbol,
+        connection_id=envelope.connection_id,
+        event_time_ns=milliseconds_to_nanoseconds(payload, "E"),
+        trade_time_ns=milliseconds_to_nanoseconds(payload, "T"),
+        received_at_ns=envelope.received_at_ns,
+        received_monotonic_ns=envelope.received_monotonic_ns,
+        trade_id=required_int(payload, "t"),
+        price=required_decimal(payload, "p"),
+        quantity=required_decimal(payload, "q"),
         buyer_is_maker=required_bool(payload, "m"),
     )
 

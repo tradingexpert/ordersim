@@ -103,15 +103,15 @@ If a vendor source cannot preserve one of those properties, document the loss in
 the connector and decide whether the connector is valid for the research task.
 
 Binance USD-M depth is one such lower-fidelity source. The Binance capture tool
-records raw L2 depth, aggregate trades, and integrity metadata, but its output
-is not accepted by `Replay` as observed MBO.
+records raw L2 depth, individual and aggregate trades, and integrity metadata,
+but its output is not accepted by `Replay` as observed MBO.
 
 After a capture completes, use `BinanceCaptureSource` to stream exact typed
-snapshots, sequence-validated depth updates, aggregate trades, individual
-trades, and book tickers. Capture individual trades with
-`ordersim-binance-raw-trades`; retain `aggTrade` as a reconciliation feed rather
-than using it as a lower-detail substitute. That typed source is the input
-boundary for the planned named virtual-L3 reconstruction model:
+snapshots, sequence-validated depth updates, trades, and book tickers. The main
+capture preserves Binance's individual `@trade` stream. Run
+`ordersim-binance-raw-trades` beside it for REST reconciliation and RPI trade
+flags; retain `aggTrade` only as another reconciliation feed. That typed source
+is the input boundary for the planned named virtual-L3 reconstruction model:
 
 ```text
 raw capture -> BinanceCaptureSource -> named model -> modeled MBO + manifest

@@ -11,6 +11,7 @@ from ordersim.connectors.binance.schema import JsonObject
 
 PUBLIC_STREAM_URL = "wss://fstream.binance.com/public/stream?streams="
 MARKET_STREAM_URL = "wss://fstream.binance.com/market/stream?streams="
+INDIVIDUAL_TRADE_STREAM_URL = "wss://fstream.binance.com/stream?streams="
 DEPTH_SNAPSHOT_URL = "https://fapi.binance.com/fapi/v1/depth"
 
 

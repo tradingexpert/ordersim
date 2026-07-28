@@ -9,6 +9,7 @@ from ordersim.connectors.binance import (
     BinanceCaptureSource,
     BinanceDepthSnapshot,
     BinanceDepthUpdate,
+    BinanceIndividualTrade,
     BinancePriceLevel,
     BinanceSequenceError,
 )
@@ -198,6 +199,7 @@ def test_source_normalizes_exact_depth_trade_and_ticker_records(
     depth = tuple(source.depth_updates())
     rpi_depth = tuple(source.depth_updates(stream_kind="rpi_depth"))
     trades = tuple(source.aggregate_trades())
+    individual_trades = tuple(source.individual_trades())
     tickers = tuple(source.book_tickers())
 
     assert snapshots == (
@@ -230,6 +232,7 @@ def test_source_normalizes_exact_depth_trade_and_ticker_records(
     assert trades[0].quantity == Decimal("1.250")
     assert trades[0].normal_quantity == Decimal("1.000")
     assert trades[0].buyer_is_maker is True
+    assert individual_trades == ()
     assert tickers[0].bid_price == Decimal("100.10")
     assert tickers[0].ask_quantity == Decimal("2.250")
 
@@ -270,6 +273,46 @@ def test_aggregate_trade_preserves_missing_normal_quantity(tmp_path: Path) -> No
     trade = next(BinanceCaptureSource((capture_path,)).aggregate_trades())
 
     assert trade.normal_quantity is None
+
+
+def test_source_normalizes_individual_websocket_trade(tmp_path: Path) -> None:
+    row = capture_row(
+        kind="message",
+        scope="market",
+        connection_id="individual-1",
+        stream="btcusdt@trade",
+        payload={
+            "e": "trade",
+            "E": 20,
+            "T": 19,
+            "s": "BTCUSDT",
+            "t": 700,
+            "p": "100.20",
+            "q": "0.125",
+            "m": False,
+            "X": "MARKET",
+            "st": 1,
+        },
+        received_at_ns=21_000,
+    )
+    capture_path, _ = write_capture(tmp_path, [row])
+
+    trades = tuple(BinanceCaptureSource((capture_path,)).individual_trades())
+
+    assert trades == (
+        BinanceIndividualTrade(
+            symbol="BTCUSDT",
+            connection_id="individual-1",
+            event_time_ns=20_000_000,
+            trade_time_ns=19_000_000,
+            received_at_ns=21_000,
+            received_monotonic_ns=21_100,
+            trade_id=700,
+            price=Decimal("100.20"),
+            quantity=Decimal("0.125"),
+            buyer_is_maker=False,
+        ),
+    )
 
 
 def test_validated_depth_rejects_gap_after_bridge(tmp_path: Path) -> None:

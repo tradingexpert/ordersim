@@ -15,6 +15,9 @@ All notable public changes to `ordersim` are documented here.
 - Added rate-budgeted Binance individual-trade capture with overlapping REST
   polls, late-ID tolerance, trade-ID deduplication, explicit gap records, and
   RPI trade flags.
+- Added the real-time Binance individual `@trade` stream to the main capture,
+  with explicit trade-ID discontinuity records; aggregate trades remain
+  reconciliation evidence.
 - Added typed `BinanceRawTrade` records alongside aggregate trades so the more
   detailed public evidence is available to future reconstruction models.
 

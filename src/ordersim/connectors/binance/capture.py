@@ -1,9 +1,10 @@
 """Record raw Binance depth and trade evidence for modeled replay.
 
 The recorder preserves exchange payloads and adds local receive timestamps,
-connection identifiers, and sequence-gap records. It deliberately does not
-turn aggregated depth into `MBOEvent` rows; that inference belongs to a named
-reconstruction model.
+connection identifiers, and sequence-gap records. Individual and aggregate
+trades are both retained. The recorder deliberately does not turn aggregated
+depth into `MBOEvent` rows; that inference belongs to a named reconstruction
+model.
 """
 
 import argparse
@@ -14,6 +15,7 @@ from pathlib import Path
 
 from ordersim.connectors.binance._storage import RawCaptureSink
 from ordersim.connectors.binance._transport import (
+    INDIVIDUAL_TRADE_STREAM_URL,
     MARKET_STREAM_URL,
     PUBLIC_STREAM_URL,
     Transport,
@@ -23,6 +25,7 @@ from ordersim.connectors.binance.schema import (
     BinanceCaptureConfig,
     CaptureManifest,
     DepthSequenceTracker,
+    TradeSequenceTracker,
 )
 
 
@@ -47,7 +50,7 @@ async def capture_binance(
             )
         )
         for symbol in config.symbols
-        for scope in ("public", "market")
+        for scope in ("public", "market", "individual")
     ]
     try:
         if config.duration_seconds is None:
@@ -74,6 +77,7 @@ async def _capture_with_reconnect(
     symbol: str,
     scope: str,
 ) -> None:
+    capture_scope = "public" if scope == "public" else "market"
     while True:
         connection_id = uuid.uuid4().hex
         try:
@@ -90,7 +94,7 @@ async def _capture_with_reconnect(
         except Exception as exc:
             await sink.write(
                 kind="connection_error",
-                scope=scope,
+                scope=capture_scope,
                 symbol=symbol,
                 connection_id=connection_id,
                 stream=None,
@@ -111,17 +115,27 @@ async def _capture_connection(
     scope: str,
     connection_id: str,
 ) -> None:
-    streams = (
-        config.public_streams(symbol)
-        if scope == "public"
-        else config.market_streams(symbol)
-    )
-    base_url = PUBLIC_STREAM_URL if scope == "public" else MARKET_STREAM_URL
+    if scope == "public":
+        streams = config.public_streams(symbol)
+        base_url = PUBLIC_STREAM_URL
+        capture_scope = "public"
+    elif scope == "market":
+        streams = config.market_streams(symbol)
+        base_url = MARKET_STREAM_URL
+        capture_scope = "market"
+    elif scope == "individual":
+        streams = config.individual_trade_streams(symbol)
+        base_url = INDIVIDUAL_TRADE_STREAM_URL
+        capture_scope = "market"
+    else:
+        raise ValueError(f"unsupported Binance capture scope {scope!r}")
+
     trackers: dict[str, DepthSequenceTracker] = {}
+    trade_tracker = TradeSequenceTracker()
     async with transport.connect(base_url + "/".join(streams)) as messages:
         await sink.write(
             kind="connection_open",
-            scope=scope,
+            scope=capture_scope,
             symbol=symbol,
             connection_id=connection_id,
             stream=None,
@@ -131,7 +145,7 @@ async def _capture_connection(
             snapshot = await transport.depth_snapshot(symbol, config.snapshot_limit)
             await sink.write(
                 kind="depth_snapshot",
-                scope=scope,
+                scope=capture_scope,
                 symbol=symbol,
                 connection_id=connection_id,
                 stream=None,
@@ -141,12 +155,24 @@ async def _capture_connection(
         async for stream, payload in messages:
             await sink.write(
                 kind="message",
-                scope=scope,
+                scope=capture_scope,
                 symbol=symbol,
                 connection_id=connection_id,
                 stream=stream,
                 payload=payload,
             )
+            if stream.endswith("@trade"):
+                gap = trade_tracker.observe(payload)
+                if gap is not None:
+                    await sink.write(
+                        kind="trade_gap",
+                        scope=capture_scope,
+                        symbol=symbol,
+                        connection_id=connection_id,
+                        stream=stream,
+                        payload=gap.as_dict(),
+                    )
+                continue
             if "@depth@" not in stream and "@rpiDepth@" not in stream:
                 continue
             tracker = trackers.setdefault(stream, DepthSequenceTracker())
@@ -154,7 +180,7 @@ async def _capture_connection(
             if gap is not None:
                 await sink.write(
                     kind="sequence_gap",
-                    scope=scope,
+                    scope=capture_scope,
                     symbol=symbol,
                     connection_id=connection_id,
                     stream=stream,
@@ -164,7 +190,7 @@ async def _capture_connection(
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Record Binance USD-M depth and aggregate-trade evidence."
+        description="Record Binance USD-M depth and trade evidence."
     )
     parser.add_argument("output_dir", type=Path)
     parser.add_argument(

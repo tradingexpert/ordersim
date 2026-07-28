@@ -14,6 +14,7 @@ import ordersim.connectors.binance._transport as transport_module
 import ordersim.connectors.binance.capture as capture_module
 from ordersim.connectors.binance._storage import RawCaptureSink
 from ordersim.connectors.binance._transport import (
+    INDIVIDUAL_TRADE_STREAM_URL,
     MARKET_STREAM_URL,
     PUBLIC_STREAM_URL,
     WebSocketTransport,
@@ -31,6 +32,7 @@ from ordersim.connectors.binance.schema import (
     BinanceCaptureConfig,
     CaptureManifest,
     DepthSequenceTracker,
+    TradeSequenceTracker,
 )
 
 
@@ -51,6 +53,7 @@ def test_capture_config_names_the_highest_resolution_standard_streams(
         "btcusdt@rpiDepth@500ms",
     )
     assert config.market_streams("BTCUSDT") == ("btcusdt@aggTrade",)
+    assert config.individual_trade_streams("BTCUSDT") == ("btcusdt@trade",)
 
 
 @pytest.mark.parametrize(
@@ -105,6 +108,33 @@ def test_depth_sequence_tracker_rejects_malformed_payloads() -> None:
         tracker.observe({"U": "10", "u": 12, "pu": 9})
     with pytest.raises(ValueError, match="u < U"):
         tracker.observe({"U": 12, "u": 10, "pu": 9})
+
+
+def test_trade_sequence_tracker_reports_missing_and_repeated_ids() -> None:
+    tracker = TradeSequenceTracker()
+
+    assert tracker.observe({"t": 100}) is None
+    assert tracker.observe({"t": 101}) is None
+    missing = tracker.observe({"t": 104})
+    repeated = tracker.observe({"t": 104})
+
+    assert missing is not None
+    assert missing.as_dict() == {
+        "expected_trade_id": 102,
+        "received_trade_id": 104,
+        "missing_count": 2,
+    }
+    assert repeated is not None
+    assert repeated.as_dict() == {
+        "expected_trade_id": 105,
+        "received_trade_id": 104,
+        "missing_count": 0,
+    }
+
+
+def test_trade_sequence_tracker_rejects_malformed_payload() -> None:
+    with pytest.raises(ValueError, match="must be an integer"):
+        TradeSequenceTracker().observe({"t": "100"})
 
 
 def test_combined_message_decoder_preserves_exact_strings() -> None:
@@ -285,6 +315,64 @@ def test_market_connection_records_trades_without_snapshot(tmp_path: Path) -> No
     }
 
 
+def test_individual_trade_connection_records_ids_and_gap(tmp_path: Path) -> None:
+    config = BinanceCaptureConfig(output_dir=tmp_path, symbols=("BTCUSDT",))
+    transport = FakeTransport(
+        [
+            ("btcusdt@trade", {"t": 100, "p": "100.1", "q": "0.25"}),
+            ("btcusdt@trade", {"t": 103, "p": "100.2", "q": "0.50"}),
+        ]
+    )
+    sink = RawCaptureSink(config)
+
+    asyncio.run(
+        _capture_connection(
+            config=config,
+            sink=sink,
+            transport=transport,
+            symbol="BTCUSDT",
+            scope="individual",
+            connection_id="individual-1",
+        )
+    )
+    sink.close()
+    records = _read_capture_records(tmp_path)
+
+    assert transport.connected_urls == [
+        INDIVIDUAL_TRADE_STREAM_URL + "btcusdt@trade"
+    ]
+    assert transport.snapshot_calls == []
+    assert [record["kind"] for record in records] == [
+        "connection_open",
+        "message",
+        "message",
+        "trade_gap",
+    ]
+    assert records[-1]["payload"] == {
+        "expected_trade_id": 101,
+        "received_trade_id": 103,
+        "missing_count": 2,
+    }
+
+
+def test_capture_connection_rejects_unknown_scope(tmp_path: Path) -> None:
+    config = BinanceCaptureConfig(output_dir=tmp_path, symbols=("BTCUSDT",))
+    sink = RawCaptureSink(config)
+
+    with pytest.raises(ValueError, match="unsupported Binance capture scope"):
+        asyncio.run(
+            _capture_connection(
+                config=config,
+                sink=sink,
+                transport=FakeTransport([]),
+                symbol="BTCUSDT",
+                scope="unknown",
+                connection_id="unknown-1",
+            )
+        )
+    sink.close()
+
+
 def test_websocket_transport_uses_injected_network_functions() -> None:
     calls: list[tuple[str, int, int]] = []
 
@@ -453,9 +541,9 @@ def test_finite_capture_closes_connections_and_writes_manifest(
 
     manifest = asyncio.run(capture_binance(config, transport=transport))
 
-    assert manifest.counts["connection_open"] == 2
+    assert manifest.counts["connection_open"] == 3
     assert manifest.counts["depth_snapshot"] == 1
-    assert len(transport.connected_urls) == 2
+    assert len(transport.connected_urls) == 3
     assert next(tmp_path.glob("manifest-*.json")).exists()
 
 

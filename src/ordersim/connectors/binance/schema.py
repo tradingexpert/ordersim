@@ -55,9 +55,14 @@ class BinanceCaptureConfig:
         return tuple(streams)
 
     def market_streams(self, symbol: str) -> tuple[str, ...]:
-        """Return the trade streams captured for one symbol."""
+        """Return the aggregate-trade streams captured for one symbol."""
 
         return (f"{symbol.lower()}@aggTrade",)
+
+    def individual_trade_streams(self, symbol: str) -> tuple[str, ...]:
+        """Return the individual-trade streams captured for one symbol."""
+
+        return (f"{symbol.lower()}@trade",)
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,6 +168,43 @@ class DepthSequenceTracker:
             reported_previous_update_id=previous_update_id,
             first_update_id=first_update_id,
             final_update_id=final_update_id,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class TradeSequenceGap:
+    """One discontinuity in an individual-trade WebSocket stream."""
+
+    expected_trade_id: int
+    received_trade_id: int
+
+    def as_dict(self) -> dict[str, int]:
+        """Return a JSON-compatible representation."""
+
+        return {
+            "expected_trade_id": self.expected_trade_id,
+            "received_trade_id": self.received_trade_id,
+            "missing_count": max(0, self.received_trade_id - self.expected_trade_id),
+        }
+
+
+class TradeSequenceTracker:
+    """Validate individual trade-ID continuity within one connection."""
+
+    def __init__(self) -> None:
+        self._previous_trade_id: int | None = None
+
+    def observe(self, payload: Mapping[str, object]) -> TradeSequenceGap | None:
+        """Observe one trade payload and return a discontinuity when present."""
+
+        trade_id = _required_int(payload, "t")
+        previous = self._previous_trade_id
+        self._previous_trade_id = trade_id
+        if previous is None or trade_id == previous + 1:
+            return None
+        return TradeSequenceGap(
+            expected_trade_id=previous + 1,
+            received_trade_id=trade_id,
         )
 
 
