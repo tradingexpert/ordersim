@@ -94,7 +94,7 @@ ordersim-binance-raw-trades captures/binance-raw-trades \
   --symbol BTCUSDT \
   --symbol ETHUSDT \
   --duration-hours 72 \
-  --poll-interval-seconds 2
+  --poll-interval-seconds 0.5
 ```
 
 The recorder uses Binance's USD-M futures sources:
@@ -147,10 +147,12 @@ windows. It:
   beyond a missing ID;
 - writes explicit poll errors rather than silently retrying.
 
-At Binance's current 25-unit request weight, two symbols polled every two
-seconds consume an estimated 1,500 units per minute. Configuration is rejected
-when it would exceed the recorder's conservative 1,800-unit budget. This leaves
-headroom below Binance's venue limit for snapshots and operational variance.
+At Binance's current 5-unit request weight, two symbols polled every 500 ms
+consume an estimated 1,200 units per minute. Configuration is rejected when it
+would exceed the recorder's conservative 1,800-unit budget. This leaves
+headroom below Binance's venue limit for snapshots and operational variance
+while keeping the 1,000-trade overlap window ahead of observed BTCUSDT and
+ETHUSDT bursts.
 
 The aggregate-trade stream remains valuable as an independent reconciliation
 feed. It is not treated as a substitute for individual trades when individual

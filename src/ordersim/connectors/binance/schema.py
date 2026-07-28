@@ -7,7 +7,7 @@ from typing import ClassVar
 
 CAPTURE_SCHEMA_VERSION = 1
 JsonObject = dict[str, object]
-RECENT_TRADES_REQUEST_WEIGHT = 25
+RECENT_TRADES_REQUEST_WEIGHT = 5
 RAW_TRADE_WEIGHT_BUDGET_PER_MINUTE = 1_800
 
 
@@ -69,7 +69,7 @@ class BinanceRawTradeCaptureConfig:
     output_dir: Path
     symbols: tuple[str, ...]
     duration_seconds: float | None = None
-    poll_interval_seconds: float = 2.0
+    poll_interval_seconds: float = 0.5
     request_limit: int = 1000
     retry_delay_seconds: float = 2.0
 

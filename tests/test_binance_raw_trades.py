@@ -67,12 +67,12 @@ def test_raw_trade_config_normalizes_symbols_and_budgets_weight(
         output_dir=tmp_path,
         symbols=("btcusdt", "ETHUSDT"),
         duration_seconds=60,
-        poll_interval_seconds=2,
+        poll_interval_seconds=0.5,
     )
 
     assert config.symbols == ("BTCUSDT", "ETHUSDT")
     assert config.include_rpi is False
-    assert config.estimated_request_weight_per_minute == 1500
+    assert config.estimated_request_weight_per_minute == 1200
 
 
 @pytest.mark.parametrize(
@@ -89,7 +89,7 @@ def test_raw_trade_config_normalizes_symbols_and_budgets_weight(
         (
             ("BTCUSDT", "ETHUSDT", "BNBUSDT"),
             None,
-            2,
+            0.25,
             1000,
             2,
             "weight/minute budget",

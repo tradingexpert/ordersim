@@ -165,8 +165,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--poll-interval-seconds",
         type=float,
-        default=2.0,
-        help="Seconds between requests per symbol (default: 2).",
+        default=0.5,
+        help="Seconds between requests per symbol (default: 0.5).",
     )
     return parser
 
