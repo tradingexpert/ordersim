@@ -2,6 +2,13 @@
 
 All notable public changes to `ordersim` are documented here.
 
+## Unreleased
+
+- Added an optional Binance USD-M recorder for synchronized raw depth,
+  aggregate-trade, book-ticker, snapshot, and RPI evidence.
+- Added connection manifests and explicit diff-depth sequence-gap records,
+  while keeping lower-fidelity capture separate from modeled MBO replay.
+
 ## 0.1.3 - 2026-05-20
 
 - Improved default replay throughput by precompiling canonical event streams

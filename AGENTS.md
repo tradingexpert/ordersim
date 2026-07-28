@@ -38,6 +38,7 @@ extraction targets and should not be imported until they exist.
 | `ordersim/connectors/csv.py` | Normalized CSV `MBOEvent` source | Yes |
 | `ordersim/connectors/databento.py` | Databento MBO normalization | Yes |
 | `ordersim/connectors/parquet.py` | Normalized Parquet `MBOEvent` source | Yes |
+| `ordersim/connectors/binance/` | Binance L2 capture and integrity boundary | Capture API only |
 | `ordersim/latency.py` | Latency model contracts and reference models | Yes |
 | `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Yes |
 | `ordersim/testing/` | Public helpers for extension tests | Public |
@@ -109,6 +110,11 @@ For repeated research workflows, prefer:
 
 Direct connector replay is still useful for smoke tests, one-off inspection, and
 connector development.
+
+Lower-fidelity acquisition is a separate path. A venue recorder may live under
+`ordersim/connectors/` because it owns vendor I/O and schemas, but it is not a
+`DataSource` until a named model can emit valid `MBOEvent` rows. Preserve raw
+evidence separately from inferred order-level events.
 
 ### Add an Instrument Spec
 

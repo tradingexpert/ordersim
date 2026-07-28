@@ -63,6 +63,61 @@ Direct connector replay remains useful for smoke tests, one-off inspection, and
 connector development. CSV remains useful for tiny examples and reviewable
 fixtures.
 
+## Binance L2 Capture
+
+Binance USD-M futures publishes aggregated price-level depth rather than stable
+market-by-order identifiers. The capture tool therefore records source evidence
+but does not expose it as `MBOEvent` data.
+
+Install the optional WebSocket dependency:
+
+```bash
+pip install "ordersim[binance]"
+```
+
+Record three days of standard depth, aggregate trades, real-time top-of-book,
+and the optional RPI depth stream:
+
+```bash
+ordersim-binance-capture captures/binance \
+  --symbol BTCUSDT \
+  --symbol ETHUSDT \
+  --duration-hours 72 \
+  --include-rpi
+```
+
+The recorder uses Binance's USD-M futures sources:
+
+| Evidence | Source behavior |
+|---|---|
+| Diff depth | Absolute price-level quantities at up to 100 ms updates. |
+| Aggregate trades | Trades grouped by price and taking side over 100 ms. |
+| Book ticker | Real-time best bid and ask for integrity checks. |
+| RPI depth | Optional 500 ms depth including RPI orders. |
+| REST snapshot | Initial visible book, requested after the depth stream opens. |
+
+Each raw exchange payload is preserved inside a gzip JSONL envelope with:
+
+- UTC receive time in nanoseconds;
+- local monotonic receive time in nanoseconds;
+- source scope and stream name;
+- a connection identifier;
+- the untouched JSON payload.
+
+The recorder writes hourly files and one manifest per process. It also records
+a `sequence_gap` row whenever a depth event's `pu` value does not equal the
+prior event's `u` value within the same connection. A reconnect begins a new
+connection segment and obtains a new REST snapshot.
+
+These files are intentionally not canonical replay data. Binance depth has no
+stable public order IDs, and individual additions and cancellations inside an
+update window are not observable. A future named L2-to-virtual-L3 model will
+consume the capture, document the inference policy, and only then emit modeled
+`MBOEvent` rows.
+
+Capture files are local research data and must not be committed to the
+repository.
+
 For the user-facing decision guide, see `docs/data-guide.md`.
 
 ## In-Memory Sources
