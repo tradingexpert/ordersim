@@ -104,8 +104,20 @@ the connector and decide whether the connector is valid for the research task.
 
 Binance USD-M depth is one such lower-fidelity source. The Binance capture tool
 records raw L2 depth, aggregate trades, and integrity metadata, but its output
-is not accepted by `Replay` as observed MBO. See `docs/connectors.md` for the
-capture boundary and the planned modeled reconstruction path.
+is not accepted by `Replay` as observed MBO.
+
+After a capture completes, use `BinanceCaptureSource` to stream exact typed
+snapshots, sequence-validated depth updates, aggregate trades, and book
+tickers. That typed source is the input boundary for the planned named
+virtual-L3 reconstruction model:
+
+```text
+raw capture -> BinanceCaptureSource -> named model -> modeled MBO + manifest
+```
+
+There is deliberately no direct
+`BinanceCaptureSource -> Replay` path. See `docs/connectors.md` for the capture
+and validation contract.
 
 ## Related Docs
 

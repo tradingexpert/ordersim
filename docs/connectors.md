@@ -111,12 +111,61 @@ connection segment and obtains a new REST snapshot.
 
 These files are intentionally not canonical replay data. Binance depth has no
 stable public order IDs, and individual additions and cancellations inside an
-update window are not observable. A future named L2-to-virtual-L3 model will
-consume the capture, document the inference policy, and only then emit modeled
-`MBOEvent` rows.
+update window are not observable. A named L2-to-virtual-L3 model must consume
+the typed capture records, document the inference policy, and only then emit
+modeled `MBOEvent` rows.
 
 Capture files are local research data and must not be committed to the
 repository.
+
+### Reading Completed Captures
+
+`BinanceCaptureSource` streams completed gzip capture files directly, so a
+multi-day capture does not need to be loaded into memory:
+
+```python
+from ordersim.connectors.binance import BinanceCaptureSource
+
+source = BinanceCaptureSource.from_manifest(
+    "captures/binance/manifest-20260728T105500Z.json"
+)
+
+for event in source.validated_depth_events():
+    print(event)
+
+for trade in source.aggregate_trades():
+    print(trade)
+```
+
+This is a typed Binance source, not the canonical `DataSource` protocol. It
+emits `BinanceDepthSnapshot`, `BinanceDepthUpdate`,
+`BinanceAggregateTrade`, and `BinanceBookTicker` records rather than
+`MBOEvent`. Passing it directly to `Replay` is intentionally unsupported.
+
+The reader preserves prices and quantities as exact `Decimal` values. Binance
+exchange event and transaction timestamps (`E` and `T`) are milliseconds since
+the Unix epoch and are normalized to UTC nanoseconds. Local UTC receive and
+monotonic receive timestamps from the capture envelope remain available
+separately.
+
+`validated_depth_events()` applies Binance's USD-M synchronization rules per
+connection:
+
+1. Require a REST snapshot before standard diff-depth updates.
+2. Discard buffered updates where `u < lastUpdateId`.
+3. Require the first retained update to satisfy
+   `U <= lastUpdateId <= u`.
+4. Require each later update's `pu` to equal the preceding update's `u`.
+
+A broken segment raises `BinanceSequenceError`; it is never repaired silently.
+Depth quantities are absolute, and a zero quantity means remove that price
+level. RPI depth is available separately through
+`depth_updates(stream_kind="rpi_depth")`; it is not merged into standard depth
+by the source.
+
+Aggregate trades preserve Binance's optional `nq` field as
+`normal_quantity`. When present, it is the quantity excluding trades involving
+RPI orders. When absent, `normal_quantity` is `None`, not an inferred value.
 
 For the user-facing decision guide, see `docs/data-guide.md`.
 
