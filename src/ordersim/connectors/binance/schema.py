@@ -3,14 +3,19 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 CAPTURE_SCHEMA_VERSION = 1
 JsonObject = dict[str, object]
+RECENT_TRADES_REQUEST_WEIGHT = 5
+RAW_TRADE_WEIGHT_BUDGET_PER_MINUTE = 1_800
 
 
 @dataclass(frozen=True, slots=True)
 class BinanceCaptureConfig:
     """Configuration for one raw Binance USD-M futures capture."""
+
+    capture_type: ClassVar[str] = "websocket"
 
     output_dir: Path
     symbols: tuple[str, ...]
@@ -50,9 +55,73 @@ class BinanceCaptureConfig:
         return tuple(streams)
 
     def market_streams(self, symbol: str) -> tuple[str, ...]:
-        """Return the trade streams captured for one symbol."""
+        """Return the aggregate-trade streams captured for one symbol."""
 
         return (f"{symbol.lower()}@aggTrade",)
+
+    def individual_trade_streams(self, symbol: str) -> tuple[str, ...]:
+        """Return the individual-trade streams captured for one symbol."""
+
+        return (f"{symbol.lower()}@trade",)
+
+
+@dataclass(frozen=True, slots=True)
+class BinanceRawTradeCaptureConfig:
+    """Configuration for polling individual Binance USD-M trades."""
+
+    capture_type: ClassVar[str] = "raw_trades"
+
+    output_dir: Path
+    symbols: tuple[str, ...]
+    duration_seconds: float | None = None
+    poll_interval_seconds: float = 0.5
+    request_limit: int = 1000
+    retry_delay_seconds: float = 2.0
+
+    def __post_init__(self) -> None:
+        symbols = tuple(symbol.strip().upper() for symbol in self.symbols)
+        if not symbols:
+            raise ValueError("at least one symbol is required")
+        if any(not symbol.isalnum() for symbol in symbols):
+            raise ValueError("symbols must contain only letters and numbers")
+        if len(set(symbols)) != len(symbols):
+            raise ValueError("symbols must be unique")
+        if self.duration_seconds is not None and self.duration_seconds <= 0:
+            raise ValueError("duration_seconds must be positive")
+        if self.poll_interval_seconds <= 0:
+            raise ValueError("poll_interval_seconds must be positive")
+        if not 1 <= self.request_limit <= 1000:
+            raise ValueError("request_limit must be between 1 and 1000")
+        if self.retry_delay_seconds < 0:
+            raise ValueError("retry_delay_seconds must be non-negative")
+        if (
+            self.estimated_request_weight_per_minute
+            > RAW_TRADE_WEIGHT_BUDGET_PER_MINUTE
+        ):
+            raise ValueError(
+                "raw-trade polling would exceed the conservative "
+                f"{RAW_TRADE_WEIGHT_BUDGET_PER_MINUTE} weight/minute budget"
+            )
+
+        object.__setattr__(self, "output_dir", Path(self.output_dir))
+        object.__setattr__(self, "symbols", symbols)
+
+    @property
+    def include_rpi(self) -> bool:
+        """Return false because this recorder does not capture depth."""
+
+        return False
+
+    @property
+    def estimated_request_weight_per_minute(self) -> float:
+        """Return the configured recent-trades request weight per minute."""
+
+        return (
+            len(self.symbols)
+            * RECENT_TRADES_REQUEST_WEIGHT
+            * 60
+            / self.poll_interval_seconds
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +172,43 @@ class DepthSequenceTracker:
 
 
 @dataclass(frozen=True, slots=True)
+class TradeSequenceGap:
+    """One discontinuity in an individual-trade WebSocket stream."""
+
+    expected_trade_id: int
+    received_trade_id: int
+
+    def as_dict(self) -> dict[str, int]:
+        """Return a JSON-compatible representation."""
+
+        return {
+            "expected_trade_id": self.expected_trade_id,
+            "received_trade_id": self.received_trade_id,
+            "missing_count": max(0, self.received_trade_id - self.expected_trade_id),
+        }
+
+
+class TradeSequenceTracker:
+    """Validate individual trade-ID continuity within one connection."""
+
+    def __init__(self) -> None:
+        self._previous_trade_id: int | None = None
+
+    def observe(self, payload: Mapping[str, object]) -> TradeSequenceGap | None:
+        """Observe one trade payload and return a discontinuity when present."""
+
+        trade_id = _required_int(payload, "t")
+        previous = self._previous_trade_id
+        self._previous_trade_id = trade_id
+        if previous is None or trade_id == previous + 1:
+            return None
+        return TradeSequenceGap(
+            expected_trade_id=previous + 1,
+            received_trade_id=trade_id,
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class CaptureManifest:
     """Summary of one recorder process."""
 
@@ -114,6 +220,7 @@ class CaptureManifest:
     include_rpi: bool
     counts: dict[str, int]
     files: tuple[str, ...]
+    capture_type: str = "websocket"
 
     def as_dict(self) -> JsonObject:
         """Return a JSON-compatible representation."""
@@ -125,6 +232,7 @@ class CaptureManifest:
             "ended_at_ns": self.ended_at_ns,
             "symbols": list(self.symbols),
             "include_rpi": self.include_rpi,
+            "capture_type": self.capture_type,
             "counts": self.counts,
             "files": list(self.files),
         }

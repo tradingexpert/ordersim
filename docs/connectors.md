@@ -75,8 +75,8 @@ Install the optional WebSocket dependency:
 pip install "ordersim[binance]"
 ```
 
-Record three days of standard depth, aggregate trades, real-time top-of-book,
-and the optional RPI depth stream:
+Record three days of standard depth, individual and aggregate trades,
+real-time top-of-book, and the optional RPI depth stream:
 
 ```bash
 ordersim-binance-capture captures/binance \
@@ -86,12 +86,26 @@ ordersim-binance-capture captures/binance \
   --include-rpi
 ```
 
+The capture command records Binance's real-time individual `@trade` stream.
+Run the REST recorder beside it to retain the endpoint's additional
+`isRPITrade` classification and overlapping-window audit evidence:
+
+```bash
+ordersim-binance-raw-trades captures/binance-raw-trades \
+  --symbol BTCUSDT \
+  --symbol ETHUSDT \
+  --duration-hours 72 \
+  --poll-interval-seconds 0.5
+```
+
 The recorder uses Binance's USD-M futures sources:
 
 | Evidence | Source behavior |
 |---|---|
 | Diff depth | Absolute price-level quantities at up to 100 ms updates. |
+| Individual trade stream | Real-time trades with one unique trade ID per message. |
 | Aggregate trades | Trades grouped by price and taking side over 100 ms. |
+| REST individual trades | Recent trades with unique trade IDs and RPI flags. |
 | Book ticker | Real-time best bid and ask for integrity checks. |
 | RPI depth | Optional 500 ms depth including RPI orders. |
 | REST snapshot | Initial visible book, requested after the depth stream opens. |
@@ -107,7 +121,8 @@ Each raw exchange payload is preserved inside a gzip JSONL envelope with:
 The recorder writes hourly files and one manifest per process. It also records
 a `sequence_gap` row whenever a depth event's `pu` value does not equal the
 prior event's `u` value within the same connection. A reconnect begins a new
-connection segment and obtains a new REST snapshot.
+connection segment and obtains a new REST snapshot. A `trade_gap` row records
+any non-consecutive trade ID observed within one individual-trade connection.
 
 These files are intentionally not canonical replay data. Binance depth has no
 stable public order IDs, and individual additions and cancellations inside an
@@ -117,6 +132,39 @@ modeled `MBOEvent` rows.
 
 Capture files are local research data and must not be committed to the
 repository.
+
+### Individual Trade Capture
+
+Binance USD-M currently emits an individual `@trade` WebSocket message for
+each trade. This is the primary real-time trade source: it avoids the
+information loss in `aggTrade` and avoids a rolling REST window during bursts.
+The raw payload is preserved without assigning semantics to fields that
+Binance has not documented publicly.
+
+The public `/fapi/v1/trades` REST endpoint complements the stream. Each row has
+the same trade ID plus an `isRPITrade` flag that is not present in the
+WebSocket message.
+
+`ordersim-binance-raw-trades` polls that endpoint with overlapping 1,000-row
+windows. It:
+
+- stores each exact individual trade payload once;
+- records request timing and Binance's reported one-minute request weight;
+- deduplicates overlapping responses by trade ID;
+- accepts temporarily late IDs while they remain inside the overlap window;
+- writes `raw_trade_gap` only after the 1,000-row endpoint window has moved
+  beyond a missing ID;
+- writes explicit poll errors rather than silently retrying.
+
+At Binance's current 5-unit request weight, two symbols polled every 500 ms
+consume an estimated 1,200 units per minute. Configuration is rejected when it
+would exceed the recorder's conservative 1,800-unit budget. This leaves
+headroom below Binance's venue limit for snapshots and operational variance
+for normal operation. The recorder is supplemental, not a claim that polling
+alone can remain ahead of every 1,000-trade burst.
+
+The aggregate-trade stream remains valuable only as an independent
+reconciliation feed. It is not treated as a substitute for individual trades.
 
 ### Reading Completed Captures
 
@@ -135,12 +183,19 @@ for event in source.validated_depth_events():
 
 for trade in source.aggregate_trades():
     print(trade)
+
+for trade in source.individual_trades():
+    print(trade)
+
+for trade in source.raw_trades():
+    print(trade)
 ```
 
 This is a typed Binance source, not the canonical `DataSource` protocol. It
 emits `BinanceDepthSnapshot`, `BinanceDepthUpdate`,
-`BinanceAggregateTrade`, and `BinanceBookTicker` records rather than
-`MBOEvent`. Passing it directly to `Replay` is intentionally unsupported.
+`BinanceIndividualTrade`, `BinanceAggregateTrade`, `BinanceRawTrade`, and
+`BinanceBookTicker` records rather than `MBOEvent`. Passing it directly to
+`Replay` is intentionally unsupported.
 
 The reader preserves prices and quantities as exact `Decimal` values. Binance
 exchange event and transaction timestamps (`E` and `T`) are milliseconds since

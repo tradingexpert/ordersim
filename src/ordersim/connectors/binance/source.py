@@ -14,6 +14,8 @@ from ordersim.connectors.binance._parsing import (
     parse_depth_snapshot,
     parse_depth_update,
     parse_envelope,
+    parse_individual_trade,
+    parse_raw_trade,
     required_int,
 )
 from ordersim.connectors.binance.l2 import (
@@ -23,6 +25,8 @@ from ordersim.connectors.binance.l2 import (
     BinanceDepthEvent,
     BinanceDepthSnapshot,
     BinanceDepthUpdate,
+    BinanceIndividualTrade,
+    BinanceRawTrade,
     DepthStreamKind,
 )
 from ordersim.connectors.binance.schema import CAPTURE_SCHEMA_VERSION
@@ -150,6 +154,20 @@ class BinanceCaptureSource:
         for envelope in self.envelopes():
             if is_stream(envelope, "@aggTrade"):
                 yield parse_aggregate_trade(envelope)
+
+    def individual_trades(self) -> Iterator[BinanceIndividualTrade]:
+        """Yield real-time, individually identified WebSocket trades."""
+
+        for envelope in self.envelopes():
+            if is_stream(envelope, "@trade"):
+                yield parse_individual_trade(envelope)
+
+    def raw_trades(self) -> Iterator[BinanceRawTrade]:
+        """Yield individually identified REST trades with RPI flags."""
+
+        for envelope in self.envelopes():
+            if envelope.kind == "raw_trade":
+                yield parse_raw_trade(envelope)
 
     def book_tickers(self) -> Iterator[BinanceBookTicker]:
         """Yield normalized best-bid/ask messages."""

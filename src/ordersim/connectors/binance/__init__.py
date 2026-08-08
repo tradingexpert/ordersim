@@ -12,10 +12,17 @@ from ordersim.connectors.binance.l2 import (
     BinanceDepthEvent,
     BinanceDepthSnapshot,
     BinanceDepthUpdate,
+    BinanceIndividualTrade,
     BinancePriceLevel,
+    BinanceRawTrade,
     DepthStreamKind,
 )
-from ordersim.connectors.binance.schema import BinanceCaptureConfig, CaptureManifest
+from ordersim.connectors.binance.raw_trades import capture_binance_raw_trades
+from ordersim.connectors.binance.schema import (
+    BinanceCaptureConfig,
+    BinanceRawTradeCaptureConfig,
+    CaptureManifest,
+)
 from ordersim.connectors.binance.source import (
     BinanceCaptureSource,
     BinanceSequenceError,
@@ -30,9 +37,13 @@ __all__ = [
     "BinanceDepthEvent",
     "BinanceDepthSnapshot",
     "BinanceDepthUpdate",
+    "BinanceIndividualTrade",
     "BinancePriceLevel",
+    "BinanceRawTrade",
+    "BinanceRawTradeCaptureConfig",
     "BinanceSequenceError",
     "CaptureManifest",
     "DepthStreamKind",
     "capture_binance",
+    "capture_binance_raw_trades",
 ]
