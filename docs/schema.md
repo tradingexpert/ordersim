@@ -42,10 +42,15 @@ event and transaction/trade times normalized from Binance milliseconds to UTC
 nanoseconds.
 
 Binance contract quantity can be fractional, so the connector preserves it as
-`Decimal`. A future virtual-L3 reconstruction model must declare its quantity
-unit and exact conversion rule before producing the canonical integer
-`MBOEvent.size`. These L2 records are therefore not accepted directly by
-`Replay`.
+`Decimal`. `BinanceReconstructionConfig.quantity_step` declares the exact unit
+used to produce canonical integer `MBOEvent.size` values. A quantity that is
+not exactly divisible by that unit is rejected rather than rounded. The typed
+L2 records are not accepted directly by `Replay`.
+
+The real-time `@trade` stream can contain zero-price, zero-quantity messages
+whose untouched raw payload reports `X=NA`. The reconstruction study counts
+these separately as `zero_value_trade_messages`; it does not present them as
+executions or emit zero-sized canonical rows.
 
 Raw-trade capture files also contain audit envelopes:
 

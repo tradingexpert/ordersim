@@ -40,6 +40,8 @@ extraction targets and should not be imported until they exist.
 | `ordersim/connectors/parquet.py` | Normalized Parquet `MBOEvent` source | Yes |
 | `ordersim/connectors/binance/` | Binance capture and typed L2 source; not MBO | Public venue API |
 | `ordersim/connectors/binance/raw_trades.py` | Individual trade capture with ID-gap evidence | Public capture API |
+| `ordersim/connectors/binance/reconstruction.py` | Named virtual-MBO reconstruction policies | Public model API |
+| `ordersim/connectors/binance/reconstruction_study.py` | Streaming alignment and evidence report | Public research CLI |
 | `ordersim/latency.py` | Latency model contracts and reference models | Yes |
 | `ordersim/replay/simulator.py` | Replay orchestration and `run_many` | Yes |
 | `ordersim/testing/` | Public helpers for extension tests | Public |

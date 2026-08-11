@@ -30,6 +30,8 @@ backtesting, and market microstructure research.
   strategy's orders, position, and portfolio state isolated.
 - Exposes a small, regular Python API that is easy to read, debug, test, and
   extend.
+- Captures Binance L2 and individual-trade evidence and reconstructs modeled
+  MBO under explicit conservative and optimistic queue assumptions.
 
 ## What It Is Not
 
@@ -129,6 +131,7 @@ Optional data integrations and file formats are installed separately as extras:
 ```bash
 pip install "ordersim[databento]"
 pip install "ordersim[parquet]"
+pip install "ordersim[binance]"
 ```
 
 Normalized CSV input works without optional dependencies:
@@ -265,7 +268,8 @@ same input.
 
 `0.1.x` is live on PyPI. The current public line includes the Python reference
 engine, packaged C++ default, canonical connector -> Parquet -> replay workflow,
-latency models, economics, and public execution-equivalence fixtures.
+latency models, economics, public execution-equivalence fixtures, and an
+evidence-first Binance L2-to-virtual-MBO research path.
 
 Planned next milestones:
 
@@ -284,6 +288,7 @@ Planned next milestones:
 - Architecture: `docs/architecture.md`
 - Data guide: `docs/data-guide.md`
 - Connectors: `docs/connectors.md`
+- Binance reconstruction study: `docs/binance-reconstruction-study.md`
 - Releasing: `docs/releasing.md`
 - Engineering standards: `docs/engineering-standards.md`
 - Benchmarks: `docs/benchmarks.md`

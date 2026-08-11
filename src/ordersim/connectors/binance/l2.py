@@ -151,3 +151,9 @@ class BinanceBookTicker:
 
 
 BinanceDepthEvent: TypeAlias = BinanceDepthSnapshot | BinanceDepthUpdate
+BinanceObservedEvent: TypeAlias = (
+    BinanceDepthSnapshot
+    | BinanceDepthUpdate
+    | BinanceIndividualTrade
+    | BinanceBookTicker
+)

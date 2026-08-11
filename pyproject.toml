@@ -67,6 +67,7 @@ parquet = [
 [project.scripts]
 ordersim-binance-capture = "ordersim.connectors.binance.capture:main"
 ordersim-binance-raw-trades = "ordersim.connectors.binance.raw_trades:main"
+ordersim-binance-reconstruction-study = "ordersim.connectors.binance.reconstruction_study:main"
 
 [project.urls]
 Repository = "https://github.com/tradingexpert/ordersim"

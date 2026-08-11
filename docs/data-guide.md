@@ -111,11 +111,18 @@ snapshots, sequence-validated depth updates, trades, and book tickers. The main
 capture preserves Binance's individual `@trade` stream. Run
 `ordersim-binance-raw-trades` beside it for REST reconciliation and RPI trade
 flags; retain `aggTrade` only as another reconciliation feed. That typed source
-is the input boundary for the planned named virtual-L3 reconstruction model:
+is the input boundary for the named virtual-L3 reconstruction model:
 
 ```text
 raw capture -> BinanceCaptureSource -> named model -> modeled MBO + manifest
 ```
+
+Use `BinanceMBOReconstructor` to produce canonical `MBOEvent` rows for one
+snapshot-anchored connection segment. Use
+`ordersim-binance-reconstruction-study` first on a new capture or symbol to
+measure alignment, inferred flow, required replenishment, and the difference
+between the named queue policies. Reconnect segments remain separate because
+canonical MBO has no implicit clear-book event.
 
 There is deliberately no direct
 `BinanceCaptureSource -> Replay` path. See `docs/connectors.md` for the capture

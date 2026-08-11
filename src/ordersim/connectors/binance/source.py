@@ -26,6 +26,7 @@ from ordersim.connectors.binance.l2 import (
     BinanceDepthSnapshot,
     BinanceDepthUpdate,
     BinanceIndividualTrade,
+    BinanceObservedEvent,
     BinanceRawTrade,
     DepthStreamKind,
 )
@@ -68,7 +69,19 @@ class BinanceCaptureSource:
             raise ValueError("capture manifest files must be a list of names")
         return cls(tuple(path.parent / name for name in names))
 
-    def envelopes(self) -> Iterator[BinanceCaptureEnvelope]:
+    @classmethod
+    def from_directory(cls, directory: str | Path) -> "BinanceCaptureSource":
+        """Build a source from hourly capture files in chronological order."""
+
+        path = Path(directory)
+        return cls(tuple(sorted(path.glob("binance-*.jsonl.gz"))))
+
+    def envelopes(
+        self,
+        *,
+        until_received_at_ns: int | None = None,
+        symbol: str | None = None,
+    ) -> Iterator[BinanceCaptureEnvelope]:
         """Yield validated raw envelopes in capture-file order."""
 
         for path in self.files:
@@ -76,11 +89,46 @@ class BinanceCaptureSource:
                 for line_number, line in enumerate(rows, start=1):
                     try:
                         raw = json.loads(line)
-                        yield parse_envelope(raw)
+                        if not isinstance(raw, dict):
+                            raise ValueError("capture envelope must be a JSON object")
+                        received_at_ns = raw.get("received_at_ns")
+                        if (
+                            until_received_at_ns is not None
+                            and isinstance(received_at_ns, int)
+                            and received_at_ns > until_received_at_ns
+                        ):
+                            return
+                        if symbol is not None and raw.get("symbol") != symbol:
+                            continue
+                        envelope = parse_envelope(raw)
+                        yield envelope
                     except (TypeError, ValueError) as exc:
                         raise ValueError(
                             f"invalid capture row {path}:{line_number}: {exc}"
                         ) from exc
+
+    def observations(
+        self,
+        *,
+        until_received_at_ns: int | None = None,
+        symbol: str | None = None,
+    ) -> Iterator[BinanceObservedEvent]:
+        """Yield depth, individual-trade, and book-ticker evidence in receive order."""
+
+        for envelope in self.envelopes(
+            until_received_at_ns=until_received_at_ns,
+            symbol=symbol,
+        ):
+            if envelope.kind == "depth_snapshot":
+                yield parse_depth_snapshot(envelope)
+                continue
+            stream_kind = depth_stream_kind(envelope)
+            if stream_kind == "depth":
+                yield parse_depth_update(envelope, stream_kind=stream_kind)
+            elif is_stream(envelope, "@trade"):
+                yield parse_individual_trade(envelope)
+            elif is_stream(envelope, "@bookTicker"):
+                yield parse_book_ticker(envelope)
 
     def depth_snapshots(self) -> Iterator[BinanceDepthSnapshot]:
         """Yield every captured REST depth snapshot."""
