@@ -36,6 +36,25 @@ must preserve the observed price-level updates and trades. Reconstruction must
 name its cancellation-allocation, event-ordering, and randomness assumptions,
 and modeled events must not be presented as exchange-native MBO.
 
+The Binance virtual-MBO model uses the minimum-flow identity at each price
+level and depth interval:
+
+```text
+ending quantity = starting quantity + adds - cancels - traded quantity
+```
+
+It infers the smallest non-negative add and cancel quantities that satisfy that
+identity. This determines aggregate flow, but it does not determine where a
+cancel occurred inside the queue or exactly when inferred additions appeared
+inside Binance's update window.
+
+The recommended default is `queue-conservative`: additions needed by an
+interval are placed before its first trade and cancellations remove the newest
+modeled liquidity. This avoids selecting the assumptions most favorable to a
+passive strategy. `queue-optimistic` adds only when required and removes the
+oldest liquidity. Run both when queue position materially affects the result;
+their difference is model sensitivity, not measurement error.
+
 ## Queue Assumptions
 
 When the strategy places a resting limit order, the default model assumes the

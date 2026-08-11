@@ -20,6 +20,12 @@ All notable public changes to `ordersim` are documented here.
   reconciliation evidence.
 - Added typed `BinanceRawTrade` records alongside aggregate trades so the more
   detailed public evidence is available to future reconstruction models.
+- Added deterministic Binance L2-to-virtual-MBO reconstruction with explicit
+  queue-conservative and queue-optimistic policies, exact quantity scaling,
+  and canonical `MBOEvent` output.
+- Added a streaming reconstruction study that aligns individual trades to
+  depth intervals, validates joinable book-ticker states, preserves reconnect
+  boundaries, and reports inferred flow and model sensitivity.
 
 ## 0.1.3 - 2026-05-20
 

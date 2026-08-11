@@ -126,9 +126,8 @@ any non-consecutive trade ID observed within one individual-trade connection.
 
 These files are intentionally not canonical replay data. Binance depth has no
 stable public order IDs, and individual additions and cancellations inside an
-update window are not observable. A named L2-to-virtual-L3 model must consume
-the typed capture records, document the inference policy, and only then emit
-modeled `MBOEvent` rows.
+update window are not observable. `BinanceMBOReconstructor` consumes aligned
+typed records under a named policy and only then emits modeled `MBOEvent` rows.
 
 Capture files are local research data and must not be committed to the
 repository.
@@ -221,6 +220,51 @@ by the source.
 Aggregate trades preserve Binance's optional `nq` field as
 `normal_quantity`. When present, it is the quantity excluding trades involving
 RPI orders. When absent, `normal_quantity` is `None`, not an inferred value.
+
+### Studying L2-to-Virtual-MBO Reconstruction
+
+Run the evidence study before materializing modeled MBO for a new symbol or
+capture:
+
+```bash
+ordersim-binance-reconstruction-study captures/binance \
+  --symbol BTCUSDT \
+  --quantity-step 0.001 \
+  --output reports/btcusdt-reconstruction.json
+```
+
+The study streams raw files in receive order and aligns individual trades to
+depth intervals using Binance transaction timestamps. A configurable
+receive-time buffer permits messages from the independent depth and trade
+connections to arrive in a different local order. The default is 60 seconds,
+chosen from the public validation capture; every report includes maximum trade
+receive delay and residual late-trade lag so another environment can verify the
+margin. It reports:
+
+- broken or stale depth segments;
+- trades arriving too late for their exchange-time interval;
+- maximum executable-trade receive delay;
+- zero-price, zero-quantity `@trade` messages excluded from execution flow;
+- minimally inferred add and cancel quantities;
+- visible replenishment required to support observed trades;
+- exact book-ticker matches where update IDs can be joined;
+- metrics for both named queue policies.
+
+`queue-conservative` is the recommended default for fill research because it
+does not choose the cancellation and addition assumptions most favorable to a
+resting strategy. `queue-optimistic` is a sensitivity bound. If the strategy's
+result changes materially between them, the capture does not support one
+precise queue-fill claim.
+
+The minimum-flow identity preserves every observed L2 endpoint. Endpoint
+equality therefore validates implementation, not the hidden queue hypothesis.
+Book-ticker joins, sequence continuity, late-trade counts, and required
+replenishment provide the independent evidence in the report.
+
+Each fresh REST snapshot begins a new reconstruction segment. Do not concatenate
+segments as if the reconnect were an observed continuous MBO stream; write
+separate canonical files or preserve an explicit segment boundary in the
+research workflow.
 
 For the user-facing decision guide, see `docs/data-guide.md`.
 
