@@ -19,7 +19,32 @@ interest include order-book replay, market replay, latency modeling,
 queue-position effects, fill simulation, execution modeling, execution-aware
 backtesting, and market microstructure research.
 
-## Crypto L2, Reconstructed for MBO Replay
+The replay core is independent of asset class, venue, and data vendor. It
+operates on one canonical `MBOEvent` contract; integrations are responsible for
+reaching that boundary without hiding the fidelity of their source data.
+
+## Two Data Fidelity Paths
+
+`ordersim` supports two explicit routes into the same queue-aware replay:
+
+| Path | Source evidence | Current reference implementation | Replay input |
+|---|---|---|---|
+| Observed MBO | Order-level events with stable order IDs | Databento MBO | Observed `MBOEvent` rows |
+| Reconstructed virtual MBO | Sequence-valid L2 depth plus individual trades | Binance USD-M | Modeled `MBOEvent` rows plus a reconstruction manifest |
+
+Databento and Binance are the integrations available today, not boundaries of
+the architecture. Futures, crypto, and equity datasets from additional venues
+and vendors should join through one of these fidelity paths without changing
+the replay or execution-engine APIs. Normalized CSV and Parquet remain
+vendor-neutral interchange and storage formats.
+
+### Observed MBO
+
+When a source provides stable order IDs, its connector can normalize the
+observed add, cancel, modify, and trade events directly into `MBOEvent`. This is
+the highest-fidelity path. Databento is the current reference implementation.
+
+### Reconstructed Virtual MBO for Crypto L2
 
 Most crypto venues publish market-by-price depth, not the stable order IDs
 needed for true market-by-order replay. `ordersim` takes a different path: it
@@ -28,7 +53,7 @@ price-level endpoint, and emits a deterministic **virtual MBO** stream under
 explicit queue assumptions.
 
 That means crypto data can use the same inspectable, queue-aware Python/C++
-execution engines as native MBO data without pretending the inferred orders
+execution engines as observed MBO data without pretending the inferred orders
 were observed at the exchange.
 
 The first full Binance USD-M study reconstructed:
@@ -43,7 +68,7 @@ and book consistency, not knowledge of Binance's hidden FIFO queue. The
 recommended conservative policy and an optimistic sensitivity policy expose
 that uncertainty instead of burying it inside one fill rule.
 
-### The Crypto Realism Challenge
+#### The Crypto Realism Challenge
 
 Have a more realistic L2 execution model? Compare it with evidence. Use paired
 L2/L3 data or live passive-order outcomes, disclose the queue and latency
@@ -65,8 +90,8 @@ join the [public validation challenge](https://github.com/tradingexpert/ordersim
   strategy's orders, position, and portfolio state isolated.
 - Exposes a small, regular Python API that is easy to read, debug, test, and
   extend.
-- Captures Binance L2 and individual-trade evidence and reconstructs modeled
-  MBO under explicit conservative and optimistic queue assumptions.
+- Accepts observed MBO directly or reconstructed virtual MBO produced from
+  lower-fidelity evidence under an explicit, named model.
 
 ## What It Is Not
 
@@ -161,7 +186,8 @@ Install the current release from PyPI with:
 pip install ordersim
 ```
 
-Optional data integrations and file formats are installed separately as extras:
+Current optional integrations and file formats are installed separately as
+extras:
 
 ```bash
 pip install "ordersim[databento]"
@@ -177,8 +203,9 @@ from ordersim import CsvSource
 source = CsvSource("events.csv")
 ```
 
-For repeated research runs, the recommended path is to normalize once,
-materialize the canonical Parquet form, and replay from that thereafter:
+For repeated research runs, the recommended path is to reach the canonical
+`MBOEvent` boundary once, materialize Parquet, and replay from that thereafter.
+For example, the current observed-MBO integration uses Databento:
 
 ```python
 import databento as db
@@ -192,8 +219,8 @@ write_parquet(raw_source, "events.parquet")
 source = ParquetSource("events.parquet")
 ```
 
-Direct raw-source replay is still useful for one-off inspection and connector
-development:
+Direct source replay is still useful for one-off inspection and connector
+development. With the current Databento integration:
 
 ```python
 import databento as db
@@ -302,9 +329,11 @@ same input.
 ## Status
 
 `0.1.x` is live on PyPI. The current public line includes the Python reference
-engine, packaged C++ default, canonical connector -> Parquet -> replay workflow,
+engine, packaged C++ default, canonical `MBOEvent` -> Parquet -> replay workflow,
 latency models, economics, public execution-equivalence fixtures, and an
-evidence-first Binance L2-to-virtual-MBO research path.
+observed-MBO connector for Databento plus an evidence-first Binance USD-M
+L2-to-virtual-MBO reference implementation. Both integrations feed the same
+vendor- and asset-class-independent replay boundary.
 
 Planned next milestones:
 

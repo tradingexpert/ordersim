@@ -30,6 +30,9 @@ All notable public changes to `ordersim` are documented here.
   trades aligned, every processed L2 endpoint reconciled, every joinable
   book-ticker state matched, and an open challenge to compare fill models
   against paired L3 or live execution evidence.
+- Clarified the vendor- and asset-class-independent architecture: observed MBO
+  and reconstructed virtual MBO are two explicit fidelity paths, with
+  Databento and Binance documented as their current reference integrations.
 
 ## 0.1.3 - 2026-05-20
 

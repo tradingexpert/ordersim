@@ -8,8 +8,8 @@ the rest.
 
 ```mermaid
 flowchart LR
-    raw["Raw vendor data"]
-    connector["Connector<br/>DatabentoMboSource / CsvSource / ParquetSource"]
+    evidence["Source evidence<br/>observed MBO or L2 + trades"]
+    integration["Connector or<br/>named reconstruction model"]
     canonical["Canonical MBOEvent stream"]
     replay["Replay"]
     recording["RecordingGateway"]
@@ -21,8 +21,8 @@ flowchart LR
     valuation["Valuation marks"]
     result["ReplayResult<br/>fills, order log, economics"]
 
-    raw --> connector
-    connector --> canonical
+    evidence --> integration
+    integration --> canonical
     canonical --> replay
     replay --> recording
     recording <--> strategy
@@ -38,19 +38,26 @@ flowchart LR
 
 The main boundaries are:
 
-- connectors normalize external data into `MBOEvent`;
+- observed-MBO connectors normalize order-level data directly into `MBOEvent`;
+- lower-fidelity sources require a named reconstruction model before they
+  reach the canonical boundary;
 - strategies depend on `OrderGateway`, not on storage or engine internals;
 - replay normalizes inputs once, chooses an execution engine, and gathers
   results;
 - valuation marks are collected during replay and consumed by economics;
 - the Python engine defines behavior; the C++ engine must match it.
 
-## Recommended Data Flow
+## Data Fidelity Paths
+
+The replay core is independent of venue, asset class, and data vendor. Two data
+paths converge on the canonical `MBOEvent` boundary.
+
+Observed order-level data takes the direct path:
 
 ```mermaid
 flowchart LR
-    raw["Raw vendor source"]
-    normalize["Vendor connector"]
+    raw["Observed order-level source"]
+    normalize["MBO connector"]
     materialize["write_parquet(...)"]
     parquet["Canonical Parquet"]
     source["ParquetSource"]
@@ -61,16 +68,17 @@ flowchart LR
 
 Direct connector replay is supported, but repeated research should normally
 materialize canonical Parquet once and replay from it thereafter. See
-`docs/data-guide.md`.
+`docs/data-guide.md`. Databento is the current reference connector for this
+path; CSV and Parquet support the normalized canonical schema.
 
-Lower-fidelity venue data takes a longer, explicit path:
+Price-level data takes a longer, explicit path:
 
 ```mermaid
 flowchart LR
-    venue["Venue L2 + aggregate and individual trades"]
+    venue["Venue L2 + individual trades"]
     capture["Raw capture"]
     source["Typed L2 source"]
-    model["BinanceMBOReconstructor<br/>named queue policy"]
+    model["Named reconstruction model<br/>explicit queue policy"]
     modeled["Modeled MBOEvent stream"]
     parquet["Canonical Parquet + model manifest"]
     replay["Replay"]
@@ -78,9 +86,10 @@ flowchart LR
     venue --> capture --> source --> model --> modeled --> parquet --> replay
 ```
 
-This is the crypto-enabling path: aggregated venue data reaches the same
-canonical event and execution-engine boundary as native MBO, but only after a
-named model makes the missing order-level structure explicit. New
+This is the path that currently enables Binance crypto data: aggregated venue
+data reaches the same canonical event and execution-engine boundary as observed
+MBO, but only after a named model makes the missing order-level structure
+explicit. The architecture itself is not Binance- or crypto-specific. New
 reconstruction policies should compete on paired-L3 or live-fill prediction,
 not on undocumented claims of realism.
 
@@ -88,10 +97,11 @@ Capture code may live beside connectors because it owns venue I/O and source
 schemas. Capture alone is not a `DataSource`: observed L2 rows must not be
 presented as exchange-native MBO. The reconstruction model owns that
 lower-fidelity assumption and preserves a study manifest describing how its
-events were inferred. For Binance, `BinanceCaptureSource` is the typed,
-sequence-validated L2 boundary and `BinanceMBOReconstructor` emits modeled
-canonical events for one snapshot-anchored segment. The capture source itself
-does not implement the canonical MBO `DataSource` protocol.
+events were inferred. The current reference implementation uses
+`BinanceCaptureSource` as the typed, sequence-validated L2 boundary and
+`BinanceMBOReconstructor` to emit modeled canonical events for one
+snapshot-anchored segment. The capture source itself does not implement the
+canonical MBO `DataSource` protocol.
 
 ## One Replay Run
 

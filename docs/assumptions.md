@@ -7,7 +7,14 @@ replay under explicitly named assumptions.
 The goal is not to claim perfect market realism. The goal is to make every
 assumption visible, testable, and replaceable.
 
-## Data Assumptions
+## Data Fidelity Assumptions
+
+The replay and execution engines do not distinguish asset classes or vendors.
+They distinguish the evidence behind their canonical events: order-level
+events may be observed directly, or they may be reconstructed from
+lower-fidelity evidence under a named model.
+
+### Observed MBO
 
 The highest-fidelity path expects order-level data:
 
@@ -26,6 +33,8 @@ Public timestamps are normalized as UTC Unix-epoch nanoseconds. Connectors own
 timezone-aware conversion from vendor or exchange-local source timestamps
 before replay sees the data.
 
+### Reconstructed Virtual MBO
+
 Lower-fidelity data can be supported, but must be named honestly. A Level 2 or
 MBP source provides aggregated size by price level, not individual queue
 members. Queue-position behavior inferred from MBP is necessarily a model, not
@@ -43,8 +52,8 @@ must preserve the observed price-level updates and trades. Reconstruction must
 name its cancellation-allocation, event-ordering, and randomness assumptions,
 and modeled events must not be presented as exchange-native MBO.
 
-The Binance virtual-MBO model uses the minimum-flow identity at each price
-level and depth interval:
+The current Binance reference model uses the minimum-flow identity at each
+price level and depth interval:
 
 ```text
 ending quantity = starting quantity + adds - cancels - traded quantity
