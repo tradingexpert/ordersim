@@ -13,7 +13,11 @@ from ordersim.connectors.binance import (
     BinanceReconstructionConfig,
     BinanceReconstructionPolicy,
 )
-from ordersim.sim import MatchingEngine
+from ordersim.sim import (
+    CppMatchingEngine,
+    MatchingEngine,
+    cpp_execution_engine_available,
+)
 
 
 def level(price: str, quantity: str) -> BinancePriceLevel:
@@ -146,6 +150,38 @@ def test_reconstructed_events_run_in_the_reference_matching_engine() -> None:
     bids, asks = engine.book_depth(1)
     assert [(row.price, row.size) for row in bids] == [(Decimal("100"), 7)]
     assert [(row.price, row.size) for row in asks] == [(Decimal("101"), 6)]
+
+
+@pytest.mark.skipif(
+    not cpp_execution_engine_available(),
+    reason="optional C++ execution engine is not built",
+)
+def test_reconstructed_events_have_equivalent_python_and_cpp_execution() -> None:
+    reconstructor = model()
+    bootstrap = reconstructor.bootstrap(snapshot(), update(100))
+    step = reconstructor.apply_update(
+        update(110, bids=(level("100", "5"),)),
+        trades=(trade(105, quantity="11"),),
+    )
+    python_engine = MatchingEngine()
+    cpp_engine = CppMatchingEngine(tick_size=Decimal("1"))
+
+    for event in bootstrap.events:
+        python_engine.apply_event(event)
+        cpp_engine.apply_event(event)
+    python_order = python_engine.place_limit("buy", Decimal("100"), 1)
+    cpp_order = cpp_engine.place_limit("buy", Decimal("100"), 1)
+
+    python_fills = [
+        fill for event in step.events for fill in python_engine.apply_event(event)
+    ]
+    cpp_fills = [
+        fill for event in step.events for fill in cpp_engine.apply_event(event)
+    ]
+
+    assert python_order.order_id == cpp_order.order_id
+    assert python_fills == cpp_fills
+    assert python_engine.book_depth(1) == cpp_engine.book_depth(1)
 
 
 def test_named_policies_bound_cancellation_effect_on_queue_position() -> None:
