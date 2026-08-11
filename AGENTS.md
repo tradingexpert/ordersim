@@ -119,6 +119,11 @@ Lower-fidelity acquisition is a separate path. A venue recorder may live under
 `DataSource` until a named model can emit valid `MBOEvent` rows. Preserve raw
 evidence separately from inferred order-level events.
 
+For crypto reconstruction changes, endpoint equality is only an integrity
+check. Claims of improved fill realism need paired L2/L3 evidence or live-order
+outcomes, explicit queue and latency assumptions, and held-out execution
+metrics. See `docs/binance-reconstruction-study.md`.
+
 ### Add an Instrument Spec
 
 1. Add a plain `InstrumentSpec`.

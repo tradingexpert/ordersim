@@ -19,6 +19,41 @@ interest include order-book replay, market replay, latency modeling,
 queue-position effects, fill simulation, execution modeling, execution-aware
 backtesting, and market microstructure research.
 
+## Crypto L2, Reconstructed for MBO Replay
+
+Most crypto venues publish market-by-price depth, not the stable order IDs
+needed for true market-by-order replay. `ordersim` takes a different path: it
+combines sequence-validated L2 depth with individual trades, reconciles every
+price-level endpoint, and emits a deterministic **virtual MBO** stream under
+explicit queue assumptions.
+
+That means crypto data can use the same inspectable, queue-aware Python/C++
+execution engines as native MBO data without pretending the inferred orders
+were observed at the exchange.
+
+The first full Binance USD-M study reconstructed:
+
+- **7,345,447 of 7,347,590 valid captured trades (99.9708%)**;
+- **all 3,328,132 processed L2 depth endpoints**;
+- **116,381 of 116,381 independently joinable top-of-book states**.
+
+The remaining trades occurred at snapshot or capture boundaries where the
+available evidence could not place them safely. These results prove alignment
+and book consistency, not knowledge of Binance's hidden FIFO queue. The
+recommended conservative policy and an optimistic sensitivity policy expose
+that uncertainty instead of burying it inside one fill rule.
+
+### The Crypto Realism Challenge
+
+Have a more realistic L2 execution model? Compare it with evidence. Use paired
+L2/L3 data or live passive-order outcomes, disclose the queue and latency
+assumptions, and report fill occurrence, filled quantity, and time-to-fill on
+held-out observations. The benchmark should reward predictive execution
+realism, not simply the ability to reproduce an L2 endpoint.
+
+See the [full reconstruction study](https://github.com/tradingexpert/ordersim/blob/main/docs/binance-reconstruction-study.md) and
+join the [public validation challenge](https://github.com/tradingexpert/ordersim/issues/62).
+
 ## What It Does
 
 - Replays order-book data and simulates order execution with explicit order

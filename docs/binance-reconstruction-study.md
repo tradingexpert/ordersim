@@ -4,6 +4,12 @@ This note records the first empirical validation of `ordersim`'s Binance
 L2-to-virtual-MBO path. It is evidence for a named model, not a claim that
 aggregated depth reveals Binance's true FIFO order queue.
 
+The purpose is larger than one Binance connector: make aggregated crypto depth
+usable by an order-level execution engine without hiding the inference needed
+to cross that boundary. The model produces an auditable virtual queue, records
+its assumptions, and makes competing queue interpretations directly
+comparable on the same observed evidence.
+
 ## Capture
 
 The study used locally captured Binance USD-M futures evidence from
@@ -68,6 +74,11 @@ quantity. Every reconnect starts a separate snapshot-anchored segment.
 | Required within-window replenishment | 17,306.673 BTC | 662,705.196 ETH |
 | Replenishment / trade quantity | 10.90% | 14.65% |
 
+Combined, the model aligned and represented 7,345,447 of 7,347,590 valid
+captured trade messages: 99.9708% by count. The 2,143 unassigned messages fall
+at snapshot, reconnect, or final-capture boundaries where assigning them would
+require evidence the capture does not contain.
+
 The book-ticker denominator includes only rows whose update ID exactly matches
 a processed depth endpoint. It is not the count of all captured book-ticker
 messages.
@@ -118,3 +129,26 @@ Useful contributions include:
   bounds;
 - evidence about Binance's zero-value `@trade` messages without relying on
   undocumented fields as stable production contracts.
+
+## The Crypto Realism Challenge
+
+This study is a public baseline, not a declaration that the queue problem is
+solved. A competing L2 fill or reconstruction model is more realistic only if
+it predicts evidence that was not used merely to reconcile the book.
+
+A useful comparison should:
+
+1. consume the same sequenced L2 endpoints and individual trades;
+2. disclose event-ordering, cancellation-allocation, hidden-liquidity, latency,
+   and market-impact assumptions;
+3. preserve the observed book or report every divergence;
+4. evaluate against paired native L3 data or actual passive-order outcomes;
+5. report fill classification, filled-quantity error, and time-to-fill error on
+   held-out intervals;
+6. publish enough code and aggregate results for another researcher to repeat
+   the comparison without redistributing restricted market data.
+
+Endpoint equality is an integrity requirement, not the winning metric. The
+question is whether a model predicts real execution better. Results, datasets
+that can legally be shared, and alternative policies belong in the
+[public validation challenge](https://github.com/tradingexpert/ordersim/issues/62).
