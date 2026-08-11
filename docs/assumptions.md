@@ -31,6 +31,13 @@ MBP source provides aggregated size by price level, not individual queue
 members. Queue-position behavior inferred from MBP is necessarily a model, not
 an observation.
 
+That does not make L2 useless for execution simulation. Sequence-valid depth,
+individual trades, and exact endpoint reconciliation constrain the possible
+order-level histories much more tightly than an unconstrained touch-fill rule.
+`ordersim` represents one such history as virtual MBO so it can be audited and
+replayed by the ordinary queue-aware engines. Its realism must ultimately be
+judged against paired L3 or live fills, not by the label "MBO" alone.
+
 Raw L2 capture and L2-to-L3 reconstruction are separate operations. Capture
 must preserve the observed price-level updates and trades. Reconstruction must
 name its cancellation-allocation, event-ordering, and randomness assumptions,
