@@ -1,15 +1,25 @@
 # Data Guide
 
-The default `ordersim` data path is:
+`ordersim` has two source-fidelity paths that converge on the same canonical
+replay boundary:
 
 ```text
-raw vendor data -> connector -> canonical Parquet -> repeated replay
+observed MBO -> connector -----------------------> MBOEvent
+L2 + individual trades -> named reconstruction -> MBOEvent + model manifest
+                                                       |
+                                                       v
+                                      canonical Parquet -> repeated replay
 ```
 
-Normalize once at the boundary. Persist the normalized result. Replay the
+The first path preserves observed order-level events. The second constructs an
+explicit virtual order-level history from lower-fidelity evidence. Databento
+and Binance are the current reference integrations for those paths; neither is
+part of the replay core's identity.
+
+Reach the canonical boundary once. Persist the normalized result. Replay the
 canonical result.
 
-That path keeps vendor-specific choices out of strategy experiments and gives
+These paths keep vendor-specific choices out of strategy experiments and give
 repeated runs one durable local format.
 
 ## Which Source To Use
@@ -17,7 +27,8 @@ repeated runs one durable local format.
 | Situation | Use |
 |---|---|
 | Repeated research over a real dataset | `ParquetSource` |
-| First normalization from a vendor format | vendor connector, then `write_parquet(...)` |
+| Source supplies stable order-level events | MBO connector, then `write_parquet(...)` |
+| Source supplies L2 plus individual trades | typed source plus named reconstruction model |
 | One-off connector smoke test or inspection | direct connector replay |
 | Tiny human-readable example | `CsvSource` |
 | Test or package fixture | `InMemorySource` |
@@ -25,9 +36,9 @@ repeated runs one durable local format.
 `CsvSource` is deliberately simple and reviewable. It is not the preferred
 storage format for large research datasets.
 
-## Recommended Workflow
+## Observed-MBO Example: Databento
 
-For a vendor source such as Databento:
+Databento is the current reference implementation of the observed-MBO path:
 
 ```python
 import databento as db
@@ -102,7 +113,10 @@ All canonical sources must preserve the public `MBOEvent` contract:
 If a vendor source cannot preserve one of those properties, document the loss in
 the connector and decide whether the connector is valid for the research task.
 
-Binance USD-M depth is one such lower-fidelity source. The Binance capture tool
+## Reconstructed-MBO Example: Binance USD-M
+
+Binance USD-M depth is the current reference implementation for a
+lower-fidelity source. The Binance capture tool
 records raw L2 depth, individual and aggregate trades, and integrity metadata,
 but its output is not accepted by `Replay` as observed MBO.
 

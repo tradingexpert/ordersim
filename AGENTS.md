@@ -92,6 +92,10 @@ gateway or whether the strategy should own that state itself.
 
 ### Add a Data Connector
 
+Keep the core replay boundary venue-, asset-class-, and vendor-independent.
+Databento and Binance are current reference integrations, not architectural
+special cases.
+
 1. Implement the public `DataSource` protocol.
 2. Convert source data into the canonical MBO event schema.
 3. Add a tiny fixture or generator that does not require private data.
@@ -157,8 +161,8 @@ Python engine before release:
 - same order-intent log where the public API observes it.
 
 Engines consume normalized `MBOEvent` rows. Do not make an engine responsible
-for reading Databento, CSV, Parquet, or any other source format; that belongs in
-a connector.
+for reading vendor data, CSV, Parquet, or any other source format; that belongs
+at the connector or reconstruction boundary.
 
 Use `ordersim.testing.assert_equivalent_execution_engines` before trusting a new
 engine implementation.

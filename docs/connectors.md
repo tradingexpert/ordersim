@@ -1,6 +1,14 @@
 # Connectors
 
-Connectors translate vendor data into the public `MBOEvent` schema.
+Data integrations enter `ordersim` through one of two fidelity boundaries:
+
+- observed-MBO connectors normalize order-level source data directly into the
+  public `MBOEvent` schema;
+- evidence connectors preserve lower-fidelity source records for a named
+  reconstruction model, which then emits modeled `MBOEvent` rows.
+
+The distinction is deliberate. A source integration must not make L2 data look
+like observed MBO simply to satisfy the replay interface.
 
 The public contract is intentionally small:
 
@@ -9,8 +17,21 @@ class DataSource(Protocol):
     def events(self) -> Iterable[MBOEvent]: ...
 ```
 
-A connector should hide SDK details, file layout, network access, and vendor
-column names. Replay code should receive only normalized `MBOEvent` rows.
+At the canonical boundary, a connector should hide SDK details, file layout,
+network access, and vendor column names. Replay code should receive only
+normalized `MBOEvent` rows.
+
+## Current Integrations
+
+| Integration | Fidelity role | Output |
+|---|---|---|
+| `DatabentoMboSource` | Observed order-level reference | Canonical `MBOEvent` |
+| `CsvSource` / `ParquetSource` | Vendor-neutral normalized interchange | Canonical `MBOEvent` |
+| `BinanceCaptureSource` | L2 and trade evidence reference | Typed evidence for reconstruction |
+| `BinanceMBOReconstructor` | Named virtual-MBO model | Modeled `MBOEvent` plus manifest |
+
+These are the implementations available today, not permanent asset-class,
+venue, or vendor boundaries.
 
 Normalized `ts_ns` values must be UTC Unix-epoch nanoseconds. Connectors may
 read exchange-local, vendor-local, or already-UTC source timestamps, but they
@@ -37,7 +58,7 @@ Every connector should include a tiny public fixture or generator and at least
 one deterministic replay test. The test should prove the connector can produce
 events that a strategy can replay without private data.
 
-## Recommended Workflow
+## Canonical Storage Workflow
 
 For repeated research, normalize raw vendor data once, materialize the canonical
 Parquet form, and replay from `ParquetSource` thereafter:
@@ -63,7 +84,7 @@ Direct connector replay remains useful for smoke tests, one-off inspection, and
 connector development. CSV remains useful for tiny examples and reviewable
 fixtures.
 
-## Binance L2 Capture
+## Reconstructed-MBO Reference: Binance USD-M
 
 Binance USD-M futures publishes aggregated price-level depth rather than stable
 market-by-order identifiers. The capture tool therefore records source evidence
@@ -360,7 +381,7 @@ from ordersim import write_parquet
 write_parquet(source, "events.parquet")
 ```
 
-## Databento MBO Sources
+## Observed-MBO Reference: Databento
 
 Use `DatabentoMboSource` with raw Databento MBO records, such as records yielded
 by an iterable `DBNStore`:

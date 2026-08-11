@@ -17,7 +17,19 @@ before replay sees the event.
 The replay layer operates only on normalized integer timestamps. It does not
 carry Python timezone objects or infer timezone rules after normalization.
 
-## Binance L2 Records
+## Source Fidelity Boundaries
+
+Canonical sources emit `MBOEvent` rows. They may derive from observed
+order-level data or from a named reconstruction model, but the provenance must
+remain explicit. Typed L2 records are pre-canonical evidence: they cannot enter
+`Replay` until a reconstruction policy has supplied the missing order-level
+structure.
+
+The schema is vendor-independent at the replay boundary. The sections below
+document the current Binance evidence records and the canonical event contract;
+future integrations should preserve the same distinction.
+
+## Binance L2 Evidence Records
 
 The Binance connector exposes typed records before the modeled-MBO boundary.
 These records describe observed aggregated depth and trades; they do not claim

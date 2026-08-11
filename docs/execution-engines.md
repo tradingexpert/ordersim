@@ -15,13 +15,17 @@ They do not read vendor data directly.
 The architecture is:
 
 ```text
-vendor data -> DataSource -> MBOEvent -> Replay -> ExecutionEngine
+observed MBO -> connector -----------------------> MBOEvent
+L2 + trades -> named reconstruction model ------> MBOEvent
+                                                       |
+                                                       v
+                                              Replay -> ExecutionEngine
 ```
 
-That means a Databento connector and a C++ execution engine are different
+That means a source integration and a C++ execution engine are different
 extension points:
 
-- a connector normalizes source data into `MBOEvent`;
+- a connector or reconstruction model reaches the `MBOEvent` boundary;
 - an execution engine decides how strategy orders interact with those events.
 
 ## Reference Engine
