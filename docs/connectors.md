@@ -223,6 +223,11 @@ RPI orders. When absent, `normal_quantity` is `None`, not an inferred value.
 
 ### Studying L2-to-Virtual-MBO Reconstruction
 
+This is the central crypto execution path in `ordersim`, not merely a file
+converter. It creates a deterministic, inspectable order-level representation
+from the strongest public evidence available while preserving a clear line
+between observed depth and inferred queue structure.
+
 Run the evidence study before materializing modeled MBO for a new symbol or
 capture:
 
@@ -265,6 +270,11 @@ Each fresh REST snapshot begins a new reconstruction segment. Do not concatenate
 segments as if the reconnect were an observed continuous MBO stream; write
 separate canonical files or preserve an explicit segment boundary in the
 research workflow.
+
+The full-capture baseline and rules for comparing alternative fill models are
+published in `docs/binance-reconstruction-study.md`. Community comparisons are
+tracked in the public validation challenge rather than accepted as realism
+claims without paired-L3 or live-fill evidence.
 
 For the user-facing decision guide, see `docs/data-guide.md`.
 

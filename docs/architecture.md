@@ -78,6 +78,12 @@ flowchart LR
     venue --> capture --> source --> model --> modeled --> parquet --> replay
 ```
 
+This is the crypto-enabling path: aggregated venue data reaches the same
+canonical event and execution-engine boundary as native MBO, but only after a
+named model makes the missing order-level structure explicit. New
+reconstruction policies should compete on paired-L3 or live-fill prediction,
+not on undocumented claims of realism.
+
 Capture code may live beside connectors because it owns venue I/O and source
 schemas. Capture alone is not a `DataSource`: observed L2 rows must not be
 presented as exchange-native MBO. The reconstruction model owns that

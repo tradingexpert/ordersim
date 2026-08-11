@@ -106,6 +106,13 @@ Binance USD-M depth is one such lower-fidelity source. The Binance capture tool
 records raw L2 depth, individual and aggregate trades, and integrity metadata,
 but its output is not accepted by `Replay` as observed MBO.
 
+This boundary is also what enables crypto research in `ordersim`. Rather than
+falling back to touch-fill rules, the reconstruction path turns L2 and
+individual-trade evidence into an auditable virtual MBO stream that can run
+through the ordinary queue-aware execution engines. It preserves what was
+observed, labels what was inferred, and keeps multiple queue assumptions
+comparable.
+
 After a capture completes, use `BinanceCaptureSource` to stream exact typed
 snapshots, sequence-validated depth updates, trades, and book tickers. The main
 capture preserves Binance's individual `@trade` stream. Run
@@ -126,7 +133,8 @@ canonical MBO has no implicit clear-book event.
 
 There is deliberately no direct
 `BinanceCaptureSource -> Replay` path. See `docs/connectors.md` for the capture
-and validation contract.
+and validation contract, and `docs/binance-reconstruction-study.md` for the
+full-capture results and public realism challenge.
 
 ## Related Docs
 

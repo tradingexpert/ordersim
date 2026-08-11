@@ -26,6 +26,10 @@ All notable public changes to `ordersim` are documented here.
 - Added a streaming reconstruction study that aligns individual trades to
   depth intervals, validates joinable book-ticker states, preserves reconnect
   boundaries, and reports inferred flow and model sensitivity.
+- Published the first crypto realism baseline: 99.9708% of valid captured
+  trades aligned, every processed L2 endpoint reconciled, every joinable
+  book-ticker state matched, and an open challenge to compare fill models
+  against paired L3 or live execution evidence.
 
 ## 0.1.3 - 2026-05-20
 
